@@ -9,12 +9,16 @@ bookkeeping: issued and received invoices, who owes you money, uploaded document
 
 [Česky](README.cs.md)
 
-**Status:** v0.1 — read-only. Not on npm yet; run it [from source](#from-source) until the first release.
+**Status:** v0.2 — read-only. Not on npm yet; run it [from source](#from-source) until the first release.
 
 ## What it can do
 
 | Tool | Answers |
 |---|---|
+| `get_business_snapshot` | How the company is doing, in one call: this month vs last, VAT, receivables, documents to process, bank |
+| `get_financial_overview` | Revenue, expenses and profit per month from the general ledger, largest accounts |
+| `get_vat_overview` | VAT per filing period: to pay or excess deduction, due date, final or estimate |
+| `get_bank_balances` | Bank balances per account and currency (UOL keeps monthly snapshots) |
 | `get_company` | Company name, IČO, DIČ, address, VAT filing period; doubles as a connection check |
 | `search_sales_invoices`, `get_sales_invoice` | Issued invoices with line items, VAT and payment status |
 | `search_purchase_invoices`, `get_purchase_invoice` | Received invoices |
@@ -25,13 +29,19 @@ bookkeeping: issued and received invoices, who owes you money, uploaded document
 | `list_codebook` | Currencies, departments, contracts, price lists, own bank accounts, … |
 | `api_get` | Read-only GET of any other `/v1/…` endpoint |
 
-Example questions: *"Kdo mi dluží víc než 30 dní?"*, *"Je faktura 2026000123 zaplacená?"*,
-*"Kolik jsme letos fakturovali firmě Alza?"*, *"Stáhni mi PDF poslední vydané faktury."*
+Example questions: *"Jak si letos stojíme?"*, *"Kolik zaplatím DPH za tento kvartál?"*,
+*"Kdo mi dluží víc než 30 dní?"*, *"Je faktura 2026000123 zaplacená?"*,
+*"Na čem nejvíc utrácíme?"*, *"Stáhni mi PDF poslední vydané faktury."*
+
+Ready-made prompts (slash commands in most clients): `monthly_review`, `vat_check`,
+`overdue_followup` (drafts reminders, sends nothing), `process_inbox`. The `uol://guide` resource
+explains the domain to the model.
 
 The server knows the API's quirks: invoice status `valid` means *draft*, payment status exists only
-for issued invoices, purchase invoices ignore issue-date filters, files have three different
-download shapes, and the rate limit (30 requests / 10 s) is respected client-side. See
-[docs/DESIGN.md](docs/DESIGN.md).
+for issued invoices, credit notes come with positive amounts, revenue and expenses have to be read
+from the ledger (excluding year-end closing entries), purchase invoices ignore issue-date filters,
+files have three different download shapes, and the rate limit (30 requests / 10 s) is respected
+client-side. See [docs/DESIGN.md](docs/DESIGN.md).
 
 ## Getting an API token
 
@@ -52,6 +62,7 @@ Want to try it first? `UOL_TENANT=demo` uses UOL's public DEMO company, no token
 | `UOL_EMAIL` | E-mail you log into UOL with |
 | `UOL_TOKEN` | API token |
 | `UOL_DOWNLOAD_DIR` | Where exported and downloaded files go (default `~/Downloads/uol-mcp`) |
+| `UOL_TOOLSETS` | `core`, `insights` or `all` (default) — fewer tools for clients with small tool budgets |
 | `UOL_DEBUG` | `1` logs requests to stderr (never credentials) |
 
 ### Claude Desktop
@@ -98,6 +109,20 @@ Cursor (`.cursor/mcp.json`) uses the same `mcpServers` block as Claude Desktop. 
 }
 ```
 
+### Docker
+
+```bash
+docker run -i --rm -e UOL_TENANT=firma -e UOL_EMAIL=you@example.com -e UOL_TOKEN=your-token -v "$HOME/Downloads/uol-mcp:/data" ghcr.io/jakubbegera/uol-mcp
+```
+
+Exported and downloaded files are written to `/data` inside the container; the `-v` mount keeps them.
+In an MCP client config, use `docker` as the command and the rest as `args`.
+
+### Claude Desktop extension
+
+Each release ships `uol-mcp.mcpb`. Open it to install, then fill in tenant, e-mail and token in the
+form; the token is stored as a secret. `bash scripts/build-mcpb.sh` builds the bundle from source.
+
 ### Check the setup
 
 ```bash
@@ -106,7 +131,7 @@ UOL_TENANT=firma UOL_EMAIL=you@example.com UOL_TOKEN=your-token npx -y uol-mcp d
 
 ## Privacy and safety
 
-- v0.1 only reads. Write tools (uploading documents, issuing invoices) will be opt-in and off by default.
+- The server only reads. Write tools (uploading documents, issuing invoices) will be opt-in and off by default.
 - Whatever the tools return goes to the AI model your client uses. Accounting data contains personal
   data of your contacts and employees — use a plan whose terms you are comfortable with.
 - Credentials are used only for `https://*.uol.cz` and are never written to logs or tool output.
@@ -132,7 +157,12 @@ npm test                 # unit + MCP-level tests against recorded DEMO response
 npm run typecheck
 npm run smoke            # calls every tool against the live DEMO tenant
 npm run record-fixtures  # refreshes test/fixtures/demo from the DEMO tenant
+bash scripts/build-mcpb.sh  # builds build/uol-mcp.mcpb
+docker build -t uol-mcp .
 ```
+
+Releases are cut by pushing a `v*` tag; `.github/workflows/release.yml` publishes to npm, GHCR,
+the GitHub release (MCPB bundle) and the MCP Registry.
 
 Design notes, API facts and the roadmap are in [docs/DESIGN.md](docs/DESIGN.md).
 

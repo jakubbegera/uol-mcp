@@ -6,10 +6,16 @@ import { type AppConfig, DEMO } from '../../src/config.js';
 import { createContext, createServer } from '../../src/server.js';
 import { RateLimiter } from '../../src/uol/rate-limit.js';
 
-const FIXTURES = join(import.meta.dirname, '..', 'fixtures', 'demo');
+const FIXTURES = join(import.meta.dirname, '..', 'fixtures');
 
+/** A response recorded from the DEMO tenant. */
 export function fixture<T = Record<string, unknown>>(name: string): T {
-  return JSON.parse(readFileSync(join(FIXTURES, `${name}.json`), 'utf8')) as T;
+  return JSON.parse(readFileSync(join(FIXTURES, 'demo', `${name}.json`), 'utf8')) as T;
+}
+
+/** Hand-written data for endpoints whose DEMO responses are too large or empty. */
+export function synthetic<T = Record<string, unknown>>(name: string): T {
+  return JSON.parse(readFileSync(join(FIXTURES, 'synthetic', `${name}.json`), 'utf8')) as T;
 }
 
 export interface RecordedRequest {
@@ -31,6 +37,32 @@ function singlePage(name: string, filter: (item: Item) => boolean = () => true):
   const body = fixture<Body>(name);
   if (body._meta?.pagination) delete body._meta.pagination.next;
   return { ...body, items: (body.items ?? []).filter(filter) };
+}
+
+/** Serves [items] the way UOL pages them, honouring `page` / `per_page`. */
+function paged(items: Item[], q: URLSearchParams): Body {
+  const perPage = Number(q.get('per_page') ?? 100);
+  const page = Number(q.get('page') ?? 1);
+  const last = Math.max(1, Math.ceil(items.length / perPage));
+  const link = (p: number) => `https://test.demo.uol.cz/api/v1/x?page=${p}&per_page=${perPage}`;
+  return {
+    items: items.slice((page - 1) * perPage, page * perPage),
+    _meta: { pagination: { first: link(1), last: link(last), ...(page < last ? { next: link(page + 1) } : {}) } },
+  };
+}
+
+/** `credit_account` / `debit_account` match by prefix on UOL; dates compare on the day. */
+function ledgerRows(q: URLSearchParams): Item[] {
+  const account = (row: Item, side: string) =>
+    String((row[`${side}_account`] as { chart_of_account_id?: string } | undefined)?.chart_of_account_id ?? '');
+  const day = (row: Item) => String(row.date ?? '').slice(0, 10);
+  return (synthetic<Body>('accounting_records').items ?? []).filter(
+    (row) =>
+      (!q.get('credit_account') || account(row, 'credit').startsWith(q.get('credit_account')!)) &&
+      (!q.get('debit_account') || account(row, 'debit').startsWith(q.get('debit_account')!)) &&
+      (!q.get('date_from') || day(row) >= q.get('date_from')!) &&
+      (!q.get('date_till') || day(row) <= q.get('date_till')!),
+  );
 }
 
 /** UTF-8 bytes in a header value, as UOL sends them; fetch exposes them as Latin-1. */
@@ -97,8 +129,18 @@ export function fakeUolFetch(): { fetch: typeof fetch; requests: RecordedRequest
         const listed = fixture<Body>('contacts').items?.find((c) => c.contact_id === id);
         return listed ? json(listed) : json({ contact_id: id, name: `Name of ${id}` });
       }
+      case 'accounting_records':
+        return json(paged(ledgerRows(q), q));
+      case 'internal_documents':
+        return json(paged(synthetic<Body>('internal_documents').items ?? [], q));
+      case 'bank_balances':
+        return json(paged(synthetic<Body>('bank_balances').items ?? [], q));
       case 'uploaded_documents': {
-        if (!id) return json(singlePage('uploaded_documents'));
+        if (!id) {
+          const state = q.get('state');
+          const docs = (fixture<Body>('uploaded_documents').items ?? []).filter((d) => !state || d.state === state);
+          return json(paged(docs, q));
+        }
         if (sub === 'pairings') return json(fixture('uploaded_document_pairings'));
         if (sub === 'tags') return json(fixture('err_401'), 401);
         if (sub === 'file') {

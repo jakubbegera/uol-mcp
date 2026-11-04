@@ -47,6 +47,8 @@ interface RawInvoiceCommon {
   note?: string | null;
   external_id?: string | null;
   linked_doc_number?: string | null;
+  /** False for documents that are not tax documents (e.g. proformas). */
+  vat_document?: boolean | null;
   items?: RawInvoiceItem[];
 }
 
@@ -153,6 +155,48 @@ export interface RawUploadedDocument {
   document_pairings?: { document_pairable_type?: string; document_pairable_id?: number }[];
 }
 
+/** One general-ledger posting. `status: valid` means *posted* here (unlike invoices). */
+export interface RawAccountingRecord {
+  id?: number;
+  date?: string | null;
+  status?: string | null;
+  debit_account?: Ref<'chart_of_account_id'>;
+  credit_account?: Ref<'chart_of_account_id'>;
+  /** In the document currency. */
+  amount?: string | null;
+  /** In the tenant's home currency — the one to aggregate. */
+  accounting_amount?: string | null;
+  currency?: Ref<'currency_id'>;
+  description?: string | null;
+  doc_type?: Ref<'document_config_id'>;
+  doc_number?: number | string | null;
+}
+
+export interface RawInternalDocumentItem {
+  debit_account_id?: string | null;
+  credit_account_id?: string | null;
+  amount?: string | null;
+  accounting_amount?: string | null;
+  description?: string | null;
+}
+
+export interface RawInternalDocument {
+  number?: number | string;
+  date?: string | null;
+  note?: string | null;
+  status?: string | null;
+  items?: RawInternalDocumentItem[];
+}
+
+/** Monthly opening-balance snapshot of one own bank account (not a live balance). */
+export interface RawBankBalance {
+  bank_account_id?: string | null;
+  date?: string | null;
+  opening_balance?: string | null;
+  currency?: Ref<'currency_id'>;
+  locked?: boolean | null;
+}
+
 const id = (value: string | number) => encodeURIComponent(String(value));
 
 /** One method per UOL endpoint the tools use. */
@@ -188,6 +232,14 @@ export class UolClient {
     this.http.getJson<RawUploadedDocument>(`/v1/uploaded_documents/${id(documentId)}/pairings`);
   uploadedDocumentTags = (documentId: string) =>
     this.http.getJson<Page<Record<string, unknown>>>(`/v1/uploaded_documents/${id(documentId)}/tags`);
+
+  /** `credit_account` / `debit_account` filters match by prefix (`6` → every 6xx account). */
+  accountingRecords = (query: Query) =>
+    this.http.getJson<Page<RawAccountingRecord>>('/v1/accounting_records', query);
+  /** No date filter exists on this endpoint. */
+  internalDocuments = (query: Query) =>
+    this.http.getJson<Page<RawInternalDocument>>('/v1/internal_documents', query);
+  bankBalances = (query: Query) => this.http.getJson<Page<RawBankBalance>>('/v1/bank_balances', query);
 
   list = (path: string, query: Query) => this.http.getJson<Page<Record<string, unknown>>>(path, query);
   get = (path: string, query?: Query) => this.http.getJson<unknown>(path, query);

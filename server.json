@@ -1,0 +1,67 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "eu.humblecode/uol",
+  "title": "UOL Účetnictví (unofficial)",
+  "description": "Invoices, receivables, VAT, ledger and documents from UOL Účetnictví (Czech online accounting)",
+  "version": "0.2.0",
+  "repository": {
+    "url": "https://github.com/jakubbegera/uol-mcp",
+    "source": "github"
+  },
+  "websiteUrl": "https://github.com/jakubbegera/uol-mcp",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "uol-mcp",
+      "version": "0.2.0",
+      "transport": { "type": "stdio" },
+      "environmentVariables": [
+        {
+          "name": "UOL_TENANT",
+          "description": "Tenant name (https://firma.ucetnictvi.uol.cz → firma), a full https://….uol.cz URL, or demo",
+          "isRequired": true,
+          "format": "string"
+        },
+        {
+          "name": "UOL_EMAIL",
+          "description": "E-mail of the UOL user (not needed for demo)",
+          "isRequired": false,
+          "format": "string"
+        },
+        {
+          "name": "UOL_TOKEN",
+          "description": "UOL API token from /api_tokens (not needed for demo)",
+          "isRequired": false,
+          "isSecret": true,
+          "format": "string"
+        }
+      ]
+    },
+    {
+      "registryType": "oci",
+      "identifier": "ghcr.io/jakubbegera/uol-mcp:0.2.0",
+      "transport": { "type": "stdio" },
+      "environmentVariables": [
+        {
+          "name": "UOL_TENANT",
+          "description": "Tenant name (https://firma.ucetnictvi.uol.cz → firma), a full https://….uol.cz URL, or demo",
+          "isRequired": true,
+          "format": "string"
+        },
+        {
+          "name": "UOL_EMAIL",
+          "description": "E-mail of the UOL user (not needed for demo)",
+          "isRequired": false,
+          "format": "string"
+        },
+        {
+          "name": "UOL_TOKEN",
+          "description": "UOL API token from /api_tokens (not needed for demo)",
+          "isRequired": false,
+          "isSecret": true,
+          "format": "string"
+        }
+      ]
+    }
+  ]
+}

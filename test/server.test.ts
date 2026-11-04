@@ -24,8 +24,26 @@ async function setup() {
   return { call, requests, downloadDir };
 }
 
+const CORE_TOOLS = [
+  'get_company',
+  'list_codebook',
+  'search_sales_invoices',
+  'get_sales_invoice',
+  'search_purchase_invoices',
+  'get_purchase_invoice',
+  'export_sales_invoice',
+  'list_receivables',
+  'search_contacts',
+  'get_contact',
+  'list_uploaded_documents',
+  'get_uploaded_document',
+  'download_uploaded_document',
+  'api_get',
+];
+const INSIGHT_TOOLS = ['get_financial_overview', 'get_vat_overview', 'get_bank_balances', 'get_business_snapshot'];
+
 describe('tools/list', () => {
-  it('lists the core tools in a stable order, all read-only', async () => {
+  it('lists every tool in a stable order, all read-only', async () => {
     // arrange
     client = await connect(demoConfig(tmpdir()));
 
@@ -33,26 +51,59 @@ describe('tools/list', () => {
     const { tools } = await client.listTools();
 
     // assert
-    expect(tools.map((t) => t.name)).toEqual([
-      'get_company',
-      'list_codebook',
-      'search_sales_invoices',
-      'get_sales_invoice',
-      'search_purchase_invoices',
-      'get_purchase_invoice',
-      'export_sales_invoice',
-      'list_receivables',
-      'search_contacts',
-      'get_contact',
-      'list_uploaded_documents',
-      'get_uploaded_document',
-      'download_uploaded_document',
-      'api_get',
-    ]);
+    expect(tools.map((t) => t.name)).toEqual([...CORE_TOOLS, ...INSIGHT_TOOLS]);
     for (const tool of tools) {
       expect(tool.annotations?.readOnlyHint, tool.name).toBe(true);
       expect(tool.outputSchema, tool.name).toBeDefined();
     }
+  });
+
+  it.each([
+    ['core', CORE_TOOLS, ['overdue_followup', 'process_inbox']],
+    ['insights', INSIGHT_TOOLS, ['monthly_review', 'vat_check']],
+  ] as const)('registers only the %s toolset and its prompts', async (toolset, tools, prompts) => {
+    // arrange
+    client = await connect(demoConfig(tmpdir(), { toolsets: new Set([toolset]) }));
+
+    // act
+    const listed = await client.listTools();
+    const listedPrompts = await client.listPrompts();
+
+    // assert
+    expect(listed.tools.map((t) => t.name)).toEqual(tools);
+    expect(listedPrompts.prompts.map((p) => p.name)).toEqual(prompts);
+  });
+});
+
+describe('resources and prompts', () => {
+  it('serves the guide and the company as resources', async () => {
+    // arrange
+    const { fetch } = fakeUolFetch();
+    client = await connect(demoConfig(tmpdir()), fetch);
+
+    // act
+    const { resources } = await client.listResources();
+    const guide = await client.readResource({ uri: 'uol://guide' });
+    const company = await client.readResource({ uri: 'uol://company' });
+
+    // assert
+    expect(resources.map((r) => r.uri)).toEqual(['uol://guide', 'uol://company']);
+    expect((guide.contents[0] as { text: string }).text).toContain('get_business_snapshot');
+    expect(JSON.parse((company.contents[0] as { text: string }).text)).toMatchObject({ name: 'DEMO, s. r. o.' });
+  });
+
+  it('fills prompt arguments into Czech instructions', async () => {
+    // arrange
+    client = await connect(demoConfig(tmpdir()));
+
+    // act
+    const review = await client.getPrompt({ name: 'monthly_review', arguments: { month: '2026-10' } });
+    const followup = await client.getPrompt({ name: 'overdue_followup', arguments: {} });
+
+    // assert
+    expect((review.messages[0]?.content as { text: string }).text).toContain('měsíc 2026-10');
+    expect((followup.messages[0]?.content as { text: string }).text).toContain('víc než 14 dní');
+    expect((followup.messages[0]?.content as { text: string }).text).toContain('Nic neodesílej');
   });
 });
 

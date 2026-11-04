@@ -1,0 +1,9 @@
+{
+  "_comment": "Monthly opening-balance snapshots; DEMO has none.",
+  "items": [
+    { "bank_account_id": "cs_czk", "date": "2026-11-01", "opening_balance": "100000.5", "currency": { "currency_id": "CZK" }, "locked": false },
+    { "bank_account_id": "cs_czk", "date": "2026-10-01", "opening_balance": "90000.0", "currency": { "currency_id": "CZK" }, "locked": true },
+    { "bank_account_id": "fio_czk", "date": "2026-10-01", "opening_balance": "5000.0", "currency": { "currency_id": "CZK" }, "locked": true },
+    { "bank_account_id": "cs_eur", "date": "2026-11-01", "opening_balance": "1000.0", "currency": { "currency_id": "EUR" }, "locked": false }
+  ]
+}

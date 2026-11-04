@@ -74,6 +74,7 @@ async function main(): Promise<void> {
   }
 
   const config = loadConfig();
+  for (const warning of config.warnings ?? []) process.stderr.write(`uol-mcp: ${warning}\n`);
   if (config.configError) process.stderr.write(`uol-mcp: ${config.configError}\n`);
   else if (!config.credentials) process.stderr.write(`uol-mcp: not configured. ${SETUP_HINT}\n`);
   const ctx = createContext(config);

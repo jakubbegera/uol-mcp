@@ -1,11 +1,14 @@
 import { createRequire } from 'node:module';
 import { McpServer } from '@modelcontextprotocol/server';
-import { type AppConfig, ConfigError } from './config.js';
+import { type AppConfig, ConfigError, TOOLSETS } from './config.js';
 import { INSTRUCTIONS } from './instructions.js';
+import { registerPrompts } from './prompts.js';
+import { registerResources } from './resources.js';
 import { registerCompanyTools } from './tools/company.js';
 import { registerContactTools } from './tools/contacts.js';
 import { type ToolContext, UolSession } from './tools/context.js';
 import { registerDocumentTools } from './tools/documents.js';
+import { registerInsightTools } from './tools/insights.js';
 import { registerInvoiceTools } from './tools/invoices.js';
 import { registerRawTools } from './tools/raw.js';
 import { registerReceivableTools } from './tools/receivables.js';
@@ -50,14 +53,20 @@ export function createContext(config: AppConfig, deps: Dependencies = {}): ToolC
 export function createServer(ctx: ToolContext): McpServer {
   const server = new McpServer(
     { name: 'uol-mcp', title: 'UOL Účetnictví', version: VERSION },
-    { capabilities: { tools: {} }, instructions: INSTRUCTIONS },
+    { capabilities: { tools: {}, resources: {}, prompts: {} }, instructions: INSTRUCTIONS },
   );
+  const toolsets = ctx.config.toolsets ?? new Set(TOOLSETS);
   // Registration order is the tools/list order; keep it stable.
-  registerCompanyTools(server, ctx);
-  registerInvoiceTools(server, ctx);
-  registerReceivableTools(server, ctx);
-  registerContactTools(server, ctx);
-  registerDocumentTools(server, ctx);
-  registerRawTools(server, ctx);
+  if (toolsets.has('core')) {
+    registerCompanyTools(server, ctx);
+    registerInvoiceTools(server, ctx);
+    registerReceivableTools(server, ctx);
+    registerContactTools(server, ctx);
+    registerDocumentTools(server, ctx);
+    registerRawTools(server, ctx);
+  }
+  if (toolsets.has('insights')) registerInsightTools(server, ctx);
+  registerResources(server, ctx);
+  registerPrompts(server, toolsets);
   return server;
 }

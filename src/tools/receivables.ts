@@ -1,12 +1,11 @@
 import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
-import { fetchAllReceivables, outstanding } from '../domain/receivables.js';
-import type { RawReceivable } from '../uol/client.js';
-import { amount, daysBetween, money, pragueDate, receivableKind, str } from '../uol/normalize.js';
+import { type ReceivableRow, fetchAllReceivables, receivableRow, receivableTotals } from '../domain/receivables.js';
+import { pragueDate } from '../uol/normalize.js';
 import { type ToolContext, registerReadTool } from './context.js';
 import { isoDate, limitArg, party } from './schemas.js';
 
-const row = z.object({
+export const receivableRowSchema = z.object({
   invoice_id: z.string().describe('Usable with get_sales_invoice'),
   number: z.string().nullable(),
   kind: z
@@ -23,7 +22,7 @@ const row = z.object({
   last_payment_date: z.string().nullable(),
 });
 
-const currencyTotals = z.object({
+export const receivableTotalsSchema = z.object({
   currency: z.string(),
   count: z.number(),
   total: z.number(),
@@ -33,14 +32,11 @@ const currencyTotals = z.object({
   overdue_outstanding: z.number(),
 });
 
-type Row = z.output<typeof row>;
-type Totals = z.output<typeof currencyTotals>;
-
 const SORTS = {
-  days_overdue: (a: Row, b: Row) => b.days_overdue - a.days_overdue || b.outstanding - a.outstanding,
-  outstanding: (a: Row, b: Row) => b.outstanding - a.outstanding,
-  due_date: (a: Row, b: Row) => (a.due_date ?? '').localeCompare(b.due_date ?? ''),
-  issue_date: (a: Row, b: Row) => (b.issue_date ?? '').localeCompare(a.issue_date ?? ''),
+  days_overdue: (a: ReceivableRow, b: ReceivableRow) => b.days_overdue - a.days_overdue || b.outstanding - a.outstanding,
+  outstanding: (a: ReceivableRow, b: ReceivableRow) => b.outstanding - a.outstanding,
+  due_date: (a: ReceivableRow, b: ReceivableRow) => (a.due_date ?? '').localeCompare(b.due_date ?? ''),
+  issue_date: (a: ReceivableRow, b: ReceivableRow) => (b.issue_date ?? '').localeCompare(a.issue_date ?? ''),
 };
 
 export function registerReceivableTools(server: McpServer, ctx: ToolContext): void {
@@ -68,8 +64,8 @@ export function registerReceivableTools(server: McpServer, ctx: ToolContext): vo
       output: z.object({
         as_of: z.string().describe('Today in Europe/Prague; overdue is computed against this date'),
         match_count: z.number(),
-        totals: z.array(currencyTotals),
-        invoices: z.array(row),
+        totals: z.array(receivableTotalsSchema),
+        invoices: z.array(receivableRowSchema),
         truncated: z.boolean().describe('True when UOL had more rows than one call reads; narrow the filters'),
       }),
     },
@@ -86,7 +82,7 @@ export function registerReceivableTools(server: McpServer, ctx: ToolContext): vo
 
       const rows = raws
         .filter((raw) => !raw.cancelled)
-        .map((raw) => toRow(raw, today))
+        .map((raw) => receivableRow(raw, today))
         .filter((r) => !args.overdue_only || r.days_overdue > 0);
 
       const listed = [...rows].sort(SORTS[args.sort]).slice(0, args.limit);
@@ -94,54 +90,8 @@ export function registerReceivableTools(server: McpServer, ctx: ToolContext): vo
       for (const r of listed) r.customer.name = r.customer.id ? (names.get(r.customer.id) ?? null) : null;
 
       return {
-        data: { as_of: today, match_count: rows.length, totals: totalsOf(rows), invoices: listed, truncated },
+        data: { as_of: today, match_count: rows.length, totals: receivableTotals(rows), invoices: listed, truncated },
       };
     },
   );
-}
-
-function toRow(raw: RawReceivable, today: string): Row {
-  const due = outstanding(raw);
-  const dueDate = str(raw.due_date);
-  const late = dueDate && due > 0 ? daysBetween(dueDate, today) : 0;
-  return {
-    invoice_id: String(raw.invoice_id ?? ''),
-    number: str(raw.invoice_public_id),
-    kind: receivableKind(raw.invoice_type),
-    customer: { id: str(raw.contact_id), name: null },
-    currency: str(raw.currency_id),
-    issue_date: str(raw.issue_date),
-    due_date: dueDate,
-    total: amount(raw.total_amount),
-    paid: amount(raw.paid_amount),
-    outstanding: due,
-    days_overdue: Math.max(0, late),
-    last_payment_date: str(raw.last_payment_date),
-  };
-}
-
-function totalsOf(rows: Row[]): Totals[] {
-  const byCurrency = new Map<string, Totals>();
-  for (const r of rows) {
-    const currency = r.currency ?? 'CZK';
-    const t = byCurrency.get(currency) ?? {
-      currency,
-      count: 0,
-      total: 0,
-      paid: 0,
-      outstanding: 0,
-      overdue_count: 0,
-      overdue_outstanding: 0,
-    };
-    t.count += 1;
-    t.total = money(t.total + (r.total ?? 0));
-    t.paid = money(t.paid + (r.paid ?? 0));
-    t.outstanding = money(t.outstanding + r.outstanding);
-    if (r.days_overdue > 0) {
-      t.overdue_count += 1;
-      t.overdue_outstanding = money(t.overdue_outstanding + r.outstanding);
-    }
-    byCurrency.set(currency, t);
-  }
-  return [...byCurrency.values()].sort((a, b) => b.outstanding - a.outstanding);
 }

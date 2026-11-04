@@ -9,11 +9,18 @@ vydané a přijaté faktury, kdo vám dluží, nahrané doklady, kontakty.
 
 [English](README.md)
 
-**Stav:** verze 0.1, pouze čtení. Zatím není na npm; do prvního vydání se spouští
+**Stav:** verze 0.2, pouze čtení. Zatím není na npm; do prvního vydání se spouští
 [ze zdrojového kódu](README.md#from-source).
 
 ## Co umí
 
+- **Přehled firmy jedním dotazem:** tento a minulý měsíc, DPH, pohledávky, doklady ke zpracování
+  a zůstatky na účtech.
+- **Tržby, náklady a zisk:** po měsících z hlavní knihy, stejně jako dashboard UOL, včetně
+  největších nákladových a výnosových účtů.
+- **DPH:** za zdaňovací období, k zaplacení nebo nadměrný odpočet, termín podání; u neuzavřeného
+  období jako odhad z faktur.
+- **Zůstatky na účtech:** podle účtů a měn (UOL eviduje měsíční počáteční stavy, ne aktuální zůstatek).
 - **Faktury:** hledání vydaných i přijatých faktur, detail s položkami a DPH, stav úhrady
   u vydaných faktur.
 - **Pohledávky:** kdo vám dluží, kolik a jak dlouho po splatnosti, součty podle měn.
@@ -22,8 +29,15 @@ vydané a přijaté faktury, kdo vám dluží, nahrané doklady, kontakty.
 - **Nahrané doklady:** co čeká na zpracování, stažení původního souboru.
 - **Číselníky:** měny, střediska, zakázky, ceníky, vlastní bankovní účty a další.
 
+Připravené postupy (v klientech jako příkazy s lomítkem): `monthly_review` (měsíční přehled),
+`vat_check` (kontrola DPH), `overdue_followup` (návrhy upomínek, nic neodesílá) a `process_inbox`
+(projde nahrané doklady).
+
 Příklady otázek:
 
+- „Jak si letos stojíme?“
+- „Kolik zaplatím DPH za tento kvartál?“
+- „Na čem nejvíc utrácíme?“
 - „Kdo mi dluží víc než 30 dní?“
 - „Je faktura 2026000123 zaplacená?“
 - „Kolik jsme letos fakturovali firmě Alza?“
@@ -69,7 +83,7 @@ Ostatní klienty (Claude Code, Cursor, VS Code) a všechny proměnné prostřed�
 
 ## Soukromí a bezpečnost
 
-- Verze 0.1 data jen čte. Zápis (nahrávání dokladů, vystavování faktur) bude volitelný
+- Server data jen čte. Zápis (nahrávání dokladů, vystavování faktur) bude volitelný
   a ve výchozím stavu vypnutý.
 - Vše, co nástroje vrátí, dostane AI model, který váš klient používá. Účetnictví obsahuje osobní
   údaje kontaktů a zaměstnanců; zvolte si takový tarif, s jehož podmínkami souhlasíte.

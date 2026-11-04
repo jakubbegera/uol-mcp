@@ -8,3 +8,5 @@ coverage/
 
 # Local notes — never commit
 README-internal.md
+build/
+*.mcpb

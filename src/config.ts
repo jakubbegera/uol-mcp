@@ -17,14 +17,32 @@ export interface UolCredentials {
   isDemo: boolean;
 }
 
+export const TOOLSETS = ['core', 'insights'] as const;
+export type Toolset = (typeof TOOLSETS)[number];
+
 export interface AppConfig {
   /** Absent when the server runs unconfigured — tools then answer with setup instructions. */
   credentials?: UolCredentials;
   /** Set when credentials were provided but are unusable (bad tenant, half-filled pair). */
   configError?: string;
+  /** Tool groups to register; every group when unset. */
+  toolsets?: ReadonlySet<Toolset>;
+  /** Non-fatal configuration problems, printed at startup. */
+  warnings?: string[];
   downloadDir: string;
   requestTimeoutMs: number;
   debug: boolean;
+}
+
+/** `UOL_TOOLSETS=core,insights` / `all`; unknown names are reported, not fatal. */
+export function parseToolsets(raw: string | undefined): { toolsets: Set<Toolset>; unknown: string[] } {
+  const names = (raw ?? '')
+    .split(',')
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+  if (names.length === 0 || names.includes('all')) return { toolsets: new Set(TOOLSETS), unknown: [] };
+  const known = names.filter((n): n is Toolset => (TOOLSETS as readonly string[]).includes(n));
+  return { toolsets: new Set(known), unknown: names.filter((n) => !known.includes(n as Toolset)) };
 }
 
 export class ConfigError extends Error {}
@@ -76,16 +94,29 @@ function defaultDownloadDir(): string {
   return existsSync(downloads) ? join(downloads, 'uol-mcp') : join(tmpdir(), 'uol-mcp');
 }
 
+/**
+ * Trimmed value, or undefined when blank. Hosts that template the env (MCPB's
+ * `${user_config.email}`) may pass the placeholder through when the user
+ * leaves an optional field empty, so an unexpanded placeholder counts as blank.
+ */
+function value(raw: string | undefined): string | undefined {
+  const v = raw?.trim();
+  return v && !/^\$\{[^}]*\}$/.test(v) ? v : undefined;
+}
+
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
+  const { toolsets, unknown } = parseToolsets(value(env.UOL_TOOLSETS));
   const config: AppConfig = {
-    downloadDir: env.UOL_DOWNLOAD_DIR?.trim() || defaultDownloadDir(),
+    toolsets,
+    warnings: unknown.length > 0 ? [`ignoring unknown UOL_TOOLSETS entries: ${unknown.join(', ')} (known: ${TOOLSETS.join(', ')}, all)`] : [],
+    downloadDir: value(env.UOL_DOWNLOAD_DIR) ?? defaultDownloadDir(),
     requestTimeoutMs: Number(env.UOL_TIMEOUT_MS) > 0 ? Number(env.UOL_TIMEOUT_MS) : 30_000,
     debug: env.UOL_DEBUG === '1' || env.UOL_DEBUG === 'true',
   };
 
-  const tenant = env.UOL_TENANT?.trim();
-  const email = env.UOL_EMAIL?.trim();
-  const token = env.UOL_TOKEN?.trim();
+  const tenant = value(env.UOL_TENANT);
+  const email = value(env.UOL_EMAIL);
+  const token = value(env.UOL_TOKEN);
   if (!tenant && !email && !token) return config;
 
   try {

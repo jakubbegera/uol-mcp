@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { currentRevision } from '../domain/company.js';
 import { UolApiError } from '../uol/errors.js';
 import { pageInfo, refId, stripNoise, str, vatPeriod } from '../uol/normalize.js';
-import { type ToolContext, registerReadTool } from './context.js';
+import { type ToolContext, type UolSession, registerReadTool } from './context.js';
 import { limitArg, pageArg, pageInfo as pageInfoSchema } from './schemas.js';
 
 const CODEBOOKS = {
@@ -22,6 +22,32 @@ const CODEBOOKS = {
 } as const;
 
 type Codebook = keyof typeof CODEBOOKS;
+
+/** Shared by the get_company tool and the uol://company resource. */
+export async function companyDetails({ client, config }: UolSession) {
+  const company = currentRevision((await client.myCompanies()).items ?? []);
+  if (!company) throw new UolApiError('UOL returned no company for this tenant.', 404, '0004');
+  const street = [str(company.street), str(company.building_number)].filter(Boolean).join(' ');
+  return {
+    name: str(company.name),
+    company_number: str(company.company_number),
+    vatin: str(company.vatin),
+    vat_period: vatPeriod(company.vat_payer_code),
+    legal_entity: company.legal_entity ?? null,
+    address: {
+      street: street || null,
+      city: str(company.city),
+      postal_code: str(company.postal_code),
+      country: refId(company.country, 'country_id'),
+    },
+    email: str(company.email),
+    phone: str(company.phone),
+    web: str(company.url),
+    register: str(company.register_text),
+    valid_from: str(company.valid_from),
+    tenant: { api_url: client.http.baseUrl, demo: config.credentials?.isDemo ?? false },
+  };
+}
 
 export function registerCompanyTools(server: McpServer, ctx: ToolContext): void {
   registerReadTool(
@@ -54,32 +80,7 @@ export function registerCompanyTools(server: McpServer, ctx: ToolContext): void 
         tenant: z.object({ api_url: z.string(), demo: z.boolean() }),
       }),
     },
-    async (_args, { client, config }) => {
-      const company = currentRevision((await client.myCompanies()).items ?? []);
-      if (!company) throw new UolApiError('UOL returned no company for this tenant.', 404, '0004');
-      const street = [str(company.street), str(company.building_number)].filter(Boolean).join(' ');
-      return {
-        data: {
-          name: str(company.name),
-          company_number: str(company.company_number),
-          vatin: str(company.vatin),
-          vat_period: vatPeriod(company.vat_payer_code),
-          legal_entity: company.legal_entity ?? null,
-          address: {
-            street: street || null,
-            city: str(company.city),
-            postal_code: str(company.postal_code),
-            country: refId(company.country, 'country_id'),
-          },
-          email: str(company.email),
-          phone: str(company.phone),
-          web: str(company.url),
-          register: str(company.register_text),
-          valid_from: str(company.valid_from),
-          tenant: { api_url: client.http.baseUrl, demo: config.credentials?.isDemo ?? false },
-        },
-      };
-    },
+    async (_args, session) => ({ data: await companyDetails(session) }),
   );
 
   registerReadTool(

@@ -1,0 +1,89 @@
+{
+  "manifest_version": "0.3",
+  "name": "uol-mcp",
+  "display_name": "UOL Účetnictví (unofficial)",
+  "version": "0.0.0",
+  "description": "Ask about your UOL Účetnictví bookkeeping: invoices, receivables, VAT, revenue and expenses, documents.",
+  "long_description": "Unofficial connector for the UOL Účetnictví REST API, not affiliated with UOL a.s. Read-only: issued and received invoices, who owes you money, VAT per filing period, revenue and expenses from the general ledger, bank balances, uploaded documents and contacts. Uses your own UOL API token; data goes to the model Claude uses.",
+  "author": {
+    "name": "Jakub Begera",
+    "url": "https://github.com/jakubbegera"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jakubbegera/uol-mcp.git"
+  },
+  "homepage": "https://github.com/jakubbegera/uol-mcp",
+  "support": "https://github.com/jakubbegera/uol-mcp/issues",
+  "license": "MIT",
+  "keywords": ["uol", "ucetnictvi", "accounting", "invoices", "vat", "czech"],
+  "server": {
+    "type": "node",
+    "entry_point": "dist/index.js",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/dist/index.js"],
+      "env": {
+        "UOL_TENANT": "${user_config.tenant}",
+        "UOL_EMAIL": "${user_config.email}",
+        "UOL_TOKEN": "${user_config.token}",
+        "UOL_DOWNLOAD_DIR": "${user_config.download_dir}"
+      }
+    }
+  },
+  "user_config": {
+    "tenant": {
+      "type": "string",
+      "title": "UOL tenant",
+      "description": "First part of your UOL address (https://firma.ucetnictvi.uol.cz → firma), or \"demo\" for UOL's public DEMO company.",
+      "required": true,
+      "default": "demo"
+    },
+    "email": {
+      "type": "string",
+      "title": "E-mail",
+      "description": "E-mail you log into UOL with. Not needed for demo.",
+      "required": false
+    },
+    "token": {
+      "type": "string",
+      "title": "API token",
+      "description": "Create it on your tenant at /api_tokens; the user needs the REST API permission. Not needed for demo.",
+      "required": false,
+      "sensitive": true
+    },
+    "download_dir": {
+      "type": "directory",
+      "title": "Download folder",
+      "description": "Where exported invoices and downloaded documents are saved. Default: Downloads/uol-mcp.",
+      "required": false
+    }
+  },
+  "tools": [
+    { "name": "get_company", "description": "Company details and VAT filing period" },
+    { "name": "list_codebook", "description": "Currencies, departments, contracts, own bank accounts and other codebooks" },
+    { "name": "search_sales_invoices", "description": "Search issued invoices with payment status" },
+    { "name": "get_sales_invoice", "description": "Issued invoice with items, VAT and payments" },
+    { "name": "search_purchase_invoices", "description": "Search received invoices" },
+    { "name": "get_purchase_invoice", "description": "Received invoice with items and VAT" },
+    { "name": "export_sales_invoice", "description": "Save an issued invoice as PDF or ISDOC" },
+    { "name": "list_receivables", "description": "Who owes you money and how long overdue" },
+    { "name": "search_contacts", "description": "Customers and suppliers by name, IČO or DIČ" },
+    { "name": "get_contact", "description": "Contact with addresses and bank accounts" },
+    { "name": "list_uploaded_documents", "description": "Documents uploaded for the accountant" },
+    { "name": "get_uploaded_document", "description": "Uploaded document details and pairings" },
+    { "name": "download_uploaded_document", "description": "Save the file of an uploaded document" },
+    { "name": "api_get", "description": "Read-only access to any other UOL API endpoint" },
+    { "name": "get_financial_overview", "description": "Revenue, expenses and profit by month from the ledger" },
+    { "name": "get_vat_overview", "description": "VAT per filing period with due dates" },
+    { "name": "get_bank_balances", "description": "Bank balances (monthly snapshots)" },
+    { "name": "get_business_snapshot", "description": "How the company is doing, in one call" }
+  ],
+  "compatibility": {
+    "platforms": ["darwin", "win32", "linux"],
+    "runtimes": {
+      "node": ">=22.0.0"
+    }
+  },
+  "privacy_policies": []
+}

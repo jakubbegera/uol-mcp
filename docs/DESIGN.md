@@ -65,6 +65,9 @@ code, in a tool description, or in the server instructions.
 | 18 | **1.0.5:** `created_at_from/to` accept RFC 3339 with offset (`+` must be `%2B`) or a date (start of day, Europe/Prague); anything else → 400. `taxable_person` replaces `business_entity`. Enums for `payment_method` and invoice `type`. | Build query strings with a URL encoder; expose the enums in schemas. |
 | 19 | **1.0.5:** `uploaded_client` mentions documents "uploaded with an OIDC token" (`azp` claim). UOL runs an OIDC issuer, but the only documented scheme for API clients is Basic auth. | Basis for a proper remote/OAuth option (§8). |
 | 20 | A missing permission answers 401 with code `0002`, the same as bad credentials (seen on `/uploaded_document_tags`). | Error text mentions both causes; optional sub-requests (tags) degrade to null. |
+| 21 | Corrective invoices (`type: corrective`, dobropis) carry **positive** `total_amount` and VAT on the invoice endpoints; only `/receivables` shows them negative. | The invoice-based VAT estimate subtracts them. |
+| 22 | Ledger rows have `amount` in the document currency and `accounting_amount` in the home currency. `credit_account` / `debit_account` filters match by **prefix** (`6` → every 6xx account). | Aggregate `accounting_amount`; read revenue and expenses with four filtered queries instead of the whole journal. |
+| 23 | Year-end closing entries move class 5 / 6 balances to class 7 (e.g. 710). | Postings against class 7 are excluded from revenue / expense sums. |
 
 Error codes from the spec: `0001` missing auth, `0002` bad credentials or missing permission,
 `0003` unknown tenant, `0004` not found, `0005` cannot delete (integrity), `0010` internal error.
@@ -102,7 +105,7 @@ Desktop — the two paths that reach non-developers.
 | `UOL_TIMEOUT_MS` | `30000` | Per-request timeout | 0.1 |
 | `UOL_DEBUG` | off | Request log on stderr (path, status, duration; never credentials) | 0.1 |
 | `UOL_ACCESS` | `read` | `read` · `write` (adds create/update/upload) · `full` (adds destructive tools and generic writes) | 0.3 |
-| `UOL_TOOLSETS` | `core,insights` | Tool groups to register (§4): `core, insights, ledger, banking, warehouse, all` | 0.2 |
+| `UOL_TOOLSETS` | `all` | Tool groups to register (§4): `core`, `insights` (later also `ledger, banking, warehouse`), or `all`. Unknown names are reported on stderr. | 0.2 |
 | `UOL_UPLOAD_DIRS` | `~/Downloads:~/Desktop:~/Documents` | Directories `upload_document` may read from | 0.3 |
 | `UOL_AUDIT_LOG` | — | JSONL file recording every write (tool, endpoint, payload hash, result id) | 0.3 |
 | `UOL_PROFILES_FILE` | — | Several tenants; adds an `account` argument to every tool and a `list_accounts` tool | 0.4 |
@@ -117,8 +120,10 @@ introspect `tools/list` that way. A tool call without credentials returns a setu
 ```
 src/
   index.ts              CLI: stdio | doctor | --version
-  server.ts             builds the McpServer and registers tools
+  server.ts             builds the McpServer and registers tools per toolset
   instructions.ts       server instructions: the domain hints from §2 for the model
+  resources.ts          uol://guide, uol://company
+  prompts.ts            Czech workflow prompts
   config.ts             env → validated config, tenant resolution
   uol/
     http.ts             fetch wrapper: Basic auth, single Accept, timeout, correlation id,
@@ -130,11 +135,19 @@ src/
   domain/
     company.ts          current company revision
     contact-names.ts    slug → name cache
-    receivables.ts      unpaid snapshot, payment status
+    receivables.ts      unpaid snapshot, payment status, per-currency totals
+    ledger.ts           revenue / expenses per month from the general ledger
+    vat.ts              filing periods, closing document vs invoice estimate
+    bank.ts             newest balance snapshot per account, totals per currency
+    paging.ts           bounded multi-page reads
     files.ts            safe file names, saving downloads
   tools/                one module per area: register…Tools(server, ctx)
 test/
-  fixtures/demo/        raw responses recorded from the DEMO tenant (scripts/record-fixtures.sh)
+  fixtures/demo/        raw responses recorded from the DEMO tenant (scripts/record-fixtures.sh,
+                        natural persons pseudonymised by scripts/scrub-fixtures.mjs)
+  fixtures/synthetic/   hand-written ledger, VAT closing document and bank snapshots
+packaging/mcpb/         Claude Desktop bundle manifest (scripts/build-mcpb.sh)
+server.json             MCP Registry entry; the release workflow adds the MCPB package
 ```
 
 ### 3.5 Output conventions
@@ -173,12 +186,12 @@ test/
 | core | `get_uploaded_document` | `…/{id}/pairings`, `…/{id}/tags`, `HEAD file` | Pairings, tags, original file name. |
 | core | `download_uploaded_document` | file (3 shapes) | Saves the file; explains a cleaned-up file. |
 | core | `api_get(path, query)` | any `GET /v1/…` | Escape hatch for anything not covered, including future endpoints; output trimmed. |
-| insights | `get_financial_overview(months)` | `/accounting_records` | Revenue / expenses / profit per month from the GL, change vs the previous month. |
+| insights | `get_financial_overview(months)` | `/accounting_records` (4 prefix-filtered queries) | Revenue / expenses / profit per month from the GL, change vs the previous month, largest accounts. |
 | insights | `get_vat_overview(periods)` | invoices + `/internal_documents` | Per filing period: output, input, to pay, due date, `preliminary` flag. |
-| insights | `get_business_snapshot` | all of the above + `/bank_balances` | This month, VAT, receivables, documents to process, bank balance with `as_of`. |
+| insights | `get_bank_balances` | `/bank_balances` | Snapshot semantics; newest per account, per currency, optional history. |
+| insights | `get_business_snapshot` | all of the above + receivables, documents | This month, VAT, receivables, documents to process, bank balance with `as_of`; failing sections are reported, not fatal. |
 | ledger | `search_accounting_records` | `/accounting_records` | Date range, debit / credit account prefix, linked document. |
 | ledger | `list_internal_documents` | `/internal_documents` | Client-side date / note filter. |
-| banking | `get_bank_balances` | `/bank_balances` | Snapshot semantics; newest per account or history. |
 | banking | `list_bank_movements` | `/bank_movements` | |
 | banking | `list_cash_documents(kind)` | `/petty_cash_incomes`, `/petty_cash_disburstments` | |
 | warehouse | `search_products`, `get_product` | `/products` | |
@@ -216,18 +229,20 @@ idempotency keys → audit log. Invoice texts, document notes and contact names 
 
 ## 5. Resources and prompts
 
-**Resources** (v0.2): `uol://company`, `uol://codebooks/{kind}`, `uol://guide` (§2 condensed for the
-model), templates `uol://sales-invoices/{id}`, `uol://uploaded-documents/{id}/file`.
+**Resources:** `uol://guide` (tool selection, glossary, synthetic accounts, limits) and `uol://company`.
+Planned: `uol://codebooks/{kind}`, templates `uol://sales-invoices/{id}`,
+`uol://uploaded-documents/{id}/file`.
 
-**Prompts** (v0.2; user-facing, Czech with English fallback; shown as slash commands)
+**Prompts** (Czech, because the text is sent as the user's message; shown as slash commands; a prompt
+is registered only when the toolset it relies on is enabled)
 
-| Prompt | Does |
-|---|---|
-| `monthly_review` | Month in numbers: revenue / expenses / profit, VAT, receivables, anomalies |
-| `overdue_followup` | Lists overdue receivables and drafts polite reminder texts (never sends anything) |
-| `vat_check` | VAT for a period, whether it is preliminary, which documents are still unprocessed |
-| `process_inbox` | Walks new uploaded documents and suggests pairings |
-| `issue_invoice` | Builds a sales invoice from free text, shows a dry run, creates it after confirmation |
+| Prompt | Toolset | Does |
+|---|---|---|
+| `monthly_review` | insights | Month in numbers: revenue / expenses / profit, VAT, receivables, unprocessed documents |
+| `vat_check` | insights | VAT for a period, whether it is preliminary, which documents may still change it |
+| `overdue_followup` | core | Overdue receivables grouped by customer, with polite reminder drafts (never sends anything) |
+| `process_inbox` | core | Walks unprocessed uploaded documents and suggests matching purchase invoices |
+| `issue_invoice` | (v0.3, write) | Builds a sales invoice from free text, shows a dry run, creates it after confirmation |
 
 ---
 
@@ -306,7 +321,7 @@ Neither is planned for the first releases.
 | Version | Scope |
 |---|---|
 | **v0.1** | Config, HTTP client + rate limit + errors, `core` read tools, stdio, fixture tests, README (EN + CS), MIT |
-| **v0.2** | `insights` tools, resources + prompts, toolsets, MCPB, official registry, Docker image + catalog |
+| **v0.2** | `insights` tools, resources + prompts, toolsets, MCPB bundle, `server.json`, Docker image, CI and release workflows (publishing waits for the public release) |
 | **v0.3** | `upload_document`, `create_sales_invoice`, `update_sales_invoice` with idempotency / dry run / audit log; HTTP transport |
 | **v0.4** | Remaining writes, multi-tenant profiles, destructive tools, remaining toolsets |
 

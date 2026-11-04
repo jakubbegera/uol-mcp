@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ConfigError, DEMO, loadConfig, resolveTenant } from '../src/config.js';
+import { ConfigError, DEMO, loadConfig, parseToolsets, resolveTenant } from '../src/config.js';
 
 describe('resolveTenant', () => {
   it.each([
@@ -69,6 +69,38 @@ describe('loadConfig', () => {
     // assert
     expect(config.downloadDir).toBe('/tmp/x');
     expect(config.requestTimeoutMs).toBe(1234);
+  });
+
+  it.each([
+    [undefined, ['core', 'insights'], []],
+    ['all', ['core', 'insights'], []],
+    ['core', ['core'], []],
+    [' Insights , bogus ', ['insights'], ['bogus']],
+  ])('parses UOL_TOOLSETS=%j', (raw, toolsets, unknown) => {
+    // act
+    const result = parseToolsets(raw);
+
+    // assert
+    expect([...result.toolsets]).toEqual(toolsets);
+    expect(result.unknown).toEqual(unknown);
+  });
+
+  it('treats unexpanded host placeholders as unset', () => {
+    // act
+    const config = loadConfig({
+      UOL_TENANT: 'demo',
+      UOL_EMAIL: '${user_config.email}',
+      UOL_TOKEN: '${user_config.token}',
+      UOL_DOWNLOAD_DIR: '${user_config.download_dir}',
+    });
+
+    // assert
+    expect(config.credentials?.email).toBe(DEMO.email);
+    expect(config.downloadDir).not.toContain('${');
+  });
+
+  it('warns about unknown toolsets instead of failing', () => {
+    expect(loadConfig({ UOL_TOOLSETS: 'core,ledger' }).warnings?.[0]).toMatch(/ledger/);
   });
 
   it('exposes ConfigError for callers', () => {

@@ -17,6 +17,10 @@ const calls: [string, Record<string, unknown>][] = [
   ['search_contacts', { query: 'alza', limit: 3 }],
   ['list_uploaded_documents', { limit: 3 }],
   ['api_get', { path: '/v1/products', query: { per_page: 2 } }],
+  ['get_financial_overview', { months: 6 }],
+  ['get_vat_overview', {}],
+  ['get_bank_balances', {}],
+  ['get_business_snapshot', {}],
 ];
 
 async function main() {
@@ -27,7 +31,14 @@ async function main() {
   await client.connect(clientTransport);
 
   const { tools } = await client.listTools();
-  console.log(`${tools.length} tools: ${tools.map((t) => t.name).join(', ')}\n`);
+  console.log(`${tools.length} tools: ${tools.map((t) => t.name).join(', ')}`);
+  const { prompts } = await client.listPrompts();
+  console.log(`${prompts.length} prompts: ${prompts.map((p) => p.name).join(', ')}`);
+  const { resources } = await client.listResources();
+  console.log(`${resources.length} resources: ${resources.map((r) => r.uri).join(', ')}`);
+  const company = await client.readResource({ uri: 'uol://company' });
+  const first = company.contents[0];
+  console.log(`uol://company → ${first && 'text' in first ? first.text.slice(0, 120) : '(no text)'}\n`);
 
   const results = new Map<string, unknown>();
   const run = async (name: string, args: Record<string, unknown>) => {

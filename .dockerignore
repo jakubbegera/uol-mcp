@@ -1,0 +1,13 @@
+.git
+.github
+node_modules
+dist
+build
+coverage
+test
+docs
+scripts
+*.mcpb
+README-internal.md
+.env
+.env.*

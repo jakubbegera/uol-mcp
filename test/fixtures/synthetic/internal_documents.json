@@ -1,0 +1,18 @@
+{
+  "_comment": "A VAT closing document for 2026-Q3 plus an unrelated internal document.",
+  "items": [
+    {
+      "number": 2026000050, "date": "2026-09-30", "note": "DPH 2026/09", "status": "confirmed",
+      "items": [
+        { "description": "Výstup 21%", "debit_account_id": "343100", "credit_account_id": "343000", "amount": "21000.0", "accounting_amount": "21000.0" },
+        { "description": "Výstup 12%", "debit_account_id": "343100", "credit_account_id": "343000", "amount": "1200.0", "accounting_amount": "1200.0" },
+        { "description": "Vstup 21%", "debit_account_id": "343000", "credit_account_id": "343200", "amount": "8400.0", "accounting_amount": "8400.0" },
+        { "description": "Vlastní daňová povinnost", "debit_account_id": "343000", "credit_account_id": "343900", "amount": "13800.0", "accounting_amount": "13800.0" }
+      ]
+    },
+    {
+      "number": 2026000051, "date": "2026-10-15", "note": "Cestovné", "status": "confirmed",
+      "items": [{ "description": "Stravné", "debit_account_id": "512000", "credit_account_id": "333000", "amount": "800.0", "accounting_amount": "800.0" }]
+    }
+  ]
+}

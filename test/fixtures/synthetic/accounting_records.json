@@ -1,0 +1,14 @@
+{
+  "_comment": "Hand-written postings for ledger tests (the DEMO ledger is too large and full of free text).",
+  "items": [
+    { "id": 1, "date": "2026-10-05T00:00:00.000+02:00", "status": "valid", "credit_account": { "chart_of_account_id": "602000" }, "debit_account": { "chart_of_account_id": "311000" }, "amount": "10000.0", "accounting_amount": "10000.0", "currency": { "currency_id": "CZK" } },
+    { "id": 2, "date": "2026-10-20T00:00:00.000+02:00", "status": "valid", "credit_account": { "chart_of_account_id": "604000" }, "debit_account": { "chart_of_account_id": "311000" }, "amount": "100.0", "accounting_amount": "2500.0", "currency": { "currency_id": "EUR" } },
+    { "id": 3, "date": "2026-11-02T00:00:00.000+01:00", "status": "valid", "debit_account": { "chart_of_account_id": "602000" }, "credit_account": { "chart_of_account_id": "311000" }, "amount": "3000.0", "accounting_amount": "3000.0", "currency": { "currency_id": "CZK" } },
+    { "id": 4, "date": "2026-10-10T00:00:00.000+02:00", "status": "valid", "debit_account": { "chart_of_account_id": "518000" }, "credit_account": { "chart_of_account_id": "321000" }, "amount": "4000.0", "accounting_amount": "4000.0", "currency": { "currency_id": "CZK" } },
+    { "id": 5, "date": "2026-10-31T00:00:00.000+01:00", "status": "valid", "debit_account": { "chart_of_account_id": "521000" }, "credit_account": { "chart_of_account_id": "331000" }, "amount": "6000.0", "accounting_amount": "6000.0", "currency": { "currency_id": "CZK" } },
+    { "id": 6, "date": "2026-11-03T00:00:00.000+01:00", "status": "valid", "credit_account": { "chart_of_account_id": "518000" }, "debit_account": { "chart_of_account_id": "321000" }, "amount": "500.0", "accounting_amount": "500.0", "currency": { "currency_id": "CZK" } },
+    { "id": 7, "date": "2026-10-31T00:00:00.000+01:00", "status": "valid", "debit_account": { "chart_of_account_id": "602000" }, "credit_account": { "chart_of_account_id": "710000" }, "amount": "12500.0", "accounting_amount": "12500.0", "currency": { "currency_id": "CZK" } },
+    { "id": 8, "date": "2026-10-15T00:00:00.000+02:00", "status": "invalid", "debit_account": { "chart_of_account_id": "518000" }, "credit_account": { "chart_of_account_id": "321000" }, "amount": "999.0", "accounting_amount": "999.0", "currency": { "currency_id": "CZK" } },
+    { "id": 9, "date": "2026-09-30T00:00:00.000+02:00", "status": "valid", "credit_account": { "chart_of_account_id": "602000" }, "debit_account": { "chart_of_account_id": "311000" }, "amount": "7000.0", "accounting_amount": "7000.0", "currency": { "currency_id": "CZK" } }
+  ]
+}
