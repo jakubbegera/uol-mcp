@@ -40,7 +40,20 @@ async function doctor(): Promise<number> {
   }
 }
 
+const MIN_NODE_MAJOR = 22;
+
 async function main(): Promise<void> {
+  // `engines` only warns under npm, and a plain `node dist/index.js` skips it
+  // entirely — older runtimes then fail later with "fetch is not defined".
+  const major = Number(process.versions.node.split('.')[0]);
+  if (major < MIN_NODE_MAJOR) {
+    process.stderr.write(
+      `uol-mcp needs Node.js ${MIN_NODE_MAJOR} or newer, but runs on ${process.version} (${process.execPath}).\n`,
+    );
+    process.exitCode = 1;
+    return;
+  }
+
   const arg = process.argv[2];
   if (arg === '--version' || arg === '-v') {
     console.log(VERSION);
