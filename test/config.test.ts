@@ -74,7 +74,7 @@ describe('loadConfig', () => {
 
   it.each([
     [undefined, ['core', 'insights'], []],
-    ['all', ['core', 'insights'], []],
+    ['all', ['core', 'insights', 'ledger', 'banking', 'warehouse'], []],
     ['core', ['core'], []],
     [' Insights , bogus ', ['insights'], ['bogus']],
   ])('parses UOL_TOOLSETS=%j', (raw, toolsets, unknown) => {
@@ -125,7 +125,7 @@ describe('loadConfig', () => {
   });
 
   it('warns about unknown toolsets instead of failing', () => {
-    expect(loadConfig({ UOL_TOOLSETS: 'core,ledger' }).warnings?.[0]).toMatch(/ledger/);
+    expect(loadConfig({ UOL_TOOLSETS: 'core,payroll' }).warnings?.[0]).toMatch(/payroll/);
   });
 
   it('exposes ConfigError for callers', () => {

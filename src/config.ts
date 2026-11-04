@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { delimiter, join } from 'node:path';
 
@@ -17,19 +17,35 @@ export interface UolCredentials {
   isDemo: boolean;
 }
 
-export const TOOLSETS = ['core', 'insights'] as const;
+export const TOOLSETS = ['core', 'insights', 'ledger', 'banking', 'warehouse'] as const;
 export type Toolset = (typeof TOOLSETS)[number];
+/** What most users need; the rest is opt-in to keep the tool list short for the model. */
+export const DEFAULT_TOOLSETS: readonly Toolset[] = ['core', 'insights'];
 
-/** `read` — no writes; `write` — create / update / upload; `full` — reserved for destructive tools. */
+/** `read` — no writes; `write` — create / update / upload; `full` — adds destructive tools. */
 export const ACCESS_LEVELS = ['read', 'write', 'full'] as const;
 export type Access = (typeof ACCESS_LEVELS)[number];
 
+/** One named UOL tenant from UOL_PROFILES_FILE. */
+export interface Account {
+  name: string;
+  label?: string;
+  credentials: UolCredentials;
+}
+
 export interface AppConfig {
-  /** Absent when the server runs unconfigured — tools then answer with setup instructions. */
+  /**
+   * Credentials of the single tenant, or of the default account when
+   * [accounts] is set. Absent when the server runs unconfigured — tools then
+   * answer with setup instructions.
+   */
   credentials?: UolCredentials;
+  /** Several tenants (UOL_PROFILES_FILE); tools then take an `account` argument. */
+  accounts?: Account[];
+  defaultAccount?: string;
   /** Set when credentials were provided but are unusable (bad tenant, half-filled pair). */
   configError?: string;
-  /** Tool groups to register; every group when unset. */
+  /** Tool groups to register; [DEFAULT_TOOLSETS] when unset. */
   toolsets?: ReadonlySet<Toolset>;
   /** Which write tools exist at all; `read` when unset. */
   access?: Access;
@@ -53,13 +69,14 @@ export function defaultUploadDirs(): string[] {
   return ['Downloads', 'Desktop', 'Documents'].map((d) => join(homedir(), d));
 }
 
-/** `UOL_TOOLSETS=core,insights` / `all`; unknown names are reported, not fatal. */
+/** `UOL_TOOLSETS=core,ledger` / `all`; unset means [DEFAULT_TOOLSETS]; unknown names are reported, not fatal. */
 export function parseToolsets(raw: string | undefined): { toolsets: Set<Toolset>; unknown: string[] } {
   const names = (raw ?? '')
     .split(',')
     .map((s) => s.trim().toLowerCase())
     .filter(Boolean);
-  if (names.length === 0 || names.includes('all')) return { toolsets: new Set(TOOLSETS), unknown: [] };
+  if (names.length === 0) return { toolsets: new Set(DEFAULT_TOOLSETS), unknown: [] };
+  if (names.includes('all')) return { toolsets: new Set(TOOLSETS), unknown: [] };
   const known = names.filter((n): n is Toolset => (TOOLSETS as readonly string[]).includes(n));
   return { toolsets: new Set(known), unknown: names.filter((n) => !known.includes(n as Toolset)) };
 }
@@ -149,23 +166,93 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   const tenant = value(env.UOL_TENANT);
   const email = value(env.UOL_EMAIL);
   const token = value(env.UOL_TOKEN);
-  if (!tenant && !email && !token) return config;
+  const profilesFile = value(env.UOL_PROFILES_FILE);
 
   try {
-    if (!tenant) throw new ConfigError('UOL_TENANT is missing');
-    const { baseUrl, isDemo } = resolveTenant(tenant);
-    if (isDemo && !email && !token) {
-      config.credentials = { baseUrl, email: DEMO.email, token: DEMO.token, isDemo };
-    } else if (!email || !token) {
-      throw new ConfigError('UOL_EMAIL and UOL_TOKEN must both be set');
-    } else {
-      config.credentials = { baseUrl, email, token, isDemo };
+    if (profilesFile) {
+      if (tenant || email || token) warnings.push('UOL_PROFILES_FILE is set; ignoring UOL_TENANT / UOL_EMAIL / UOL_TOKEN');
+      const profiles = loadProfiles(profilesFile, env, warnings);
+      config.accounts = profiles.accounts;
+      config.defaultAccount = profiles.defaultAccount;
+      config.credentials = profiles.accounts.find((a) => a.name === profiles.defaultAccount)!.credentials;
+      return config;
     }
+    if (!tenant && !email && !token) return config;
+    config.credentials = credentialsFor(tenant, email, token, 'UOL_TENANT', 'UOL_EMAIL and UOL_TOKEN');
   } catch (error) {
     if (!(error instanceof ConfigError)) throw error;
     config.configError = error.message;
   }
   return config;
+}
+
+function credentialsFor(
+  tenant: string | undefined,
+  email: string | undefined,
+  token: string | undefined,
+  tenantName: string,
+  pairName: string,
+): UolCredentials {
+  if (!tenant) throw new ConfigError(`${tenantName} is missing`);
+  const { baseUrl, isDemo } = resolveTenant(tenant);
+  if (isDemo && !email && !token) return { baseUrl, email: DEMO.email, token: DEMO.token, isDemo };
+  if (!email || !token) throw new ConfigError(`${pairName} must both be set`);
+  return { baseUrl, email, token, isDemo };
+}
+
+const ACCOUNT_NAME = /^[a-z0-9][a-z0-9_-]{0,39}$/;
+
+/**
+ * Reads UOL_PROFILES_FILE — several tenants for accountants:
+ *
+ * ```json
+ * { "default": "firma",
+ *   "accounts": {
+ *     "firma":  { "tenant": "firma", "email": "ja@firma.cz", "token_env": "UOL_TOKEN_FIRMA" },
+ *     "novak":  { "tenant": "novak", "email": "ja@firma.cz", "token": "…", "label": "Novák s.r.o." },
+ *     "demo":   { "tenant": "demo" } } }
+ * ```
+ *
+ * `token_env` names an environment variable, so tokens don't have to live in
+ * the file. A file with inline tokens that others can read is reported.
+ */
+export function loadProfiles(
+  path: string,
+  env: NodeJS.ProcessEnv,
+  warnings: string[],
+): { accounts: Account[]; defaultAccount: string } {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(readFileSync(path, 'utf8'));
+  } catch (error) {
+    throw new ConfigError(`UOL_PROFILES_FILE ${path}: ${error instanceof Error ? error.message : String(error)}`);
+  }
+  const root = (parsed ?? {}) as { default?: unknown; accounts?: Record<string, Record<string, unknown>> };
+  const entries = Object.entries(root.accounts ?? {});
+  if (entries.length === 0) throw new ConfigError(`UOL_PROFILES_FILE ${path} has no "accounts"`);
+
+  let inlineTokens = false;
+  const accounts = entries.map(([name, raw]) => {
+    if (!ACCOUNT_NAME.test(name)) {
+      throw new ConfigError(`UOL_PROFILES_FILE: account name "${name}" must be lowercase letters, digits, - or _`);
+    }
+    const text = (key: string) => (typeof raw[key] === 'string' ? value(raw[key] as string) : undefined);
+    const tokenEnv = text('token_env');
+    if (text('token')) inlineTokens = true;
+    const token = text('token') ?? (tokenEnv ? value(env[tokenEnv]) : undefined);
+    if (tokenEnv && !token) throw new ConfigError(`UOL_PROFILES_FILE: account "${name}" reads its token from ${tokenEnv}, which is not set`);
+    const credentials = credentialsFor(text('tenant'), text('email'), token, `account "${name}": tenant`, `account "${name}": email and token`);
+    return { name, label: text('label'), credentials };
+  });
+
+  const defaultAccount = typeof root.default === 'string' ? root.default : accounts[0]!.name;
+  if (!accounts.some((a) => a.name === defaultAccount)) {
+    throw new ConfigError(`UOL_PROFILES_FILE: default account "${defaultAccount}" is not among the accounts`);
+  }
+  if (inlineTokens && process.platform !== 'win32' && (statSync(path).mode & 0o077) !== 0) {
+    warnings.push(`${path} contains API tokens and is readable by other users; run chmod 600 on it or use token_env`);
+  }
+  return { accounts, defaultAccount };
 }
 
 export const SETUP_HINT =

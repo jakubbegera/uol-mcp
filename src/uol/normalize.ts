@@ -28,6 +28,14 @@ export function money(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
+/** `true` / `"true"` → true; UOL writes booleans as strings, so echoes may carry them too. */
+export function bool(raw: unknown): boolean | null {
+  if (typeof raw === 'boolean') return raw;
+  if (raw === 'true') return true;
+  if (raw === 'false') return false;
+  return null;
+}
+
 export function str(raw: unknown): string | null {
   if (raw === null || raw === undefined) return null;
   const value = String(raw).trim();

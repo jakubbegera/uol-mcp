@@ -9,7 +9,7 @@ bookkeeping: issued and received invoices, who owes you money, uploaded document
 
 [Česky](README.cs.md)
 
-**Status:** v0.3 — read-only by default, opt-in writes. Not on npm yet; run it [from source](#from-source) until the first release.
+**Status:** v0.4 — read-only by default, opt-in writes. Not on npm yet; run it [from source](#from-source) until the first release.
 
 ## What it can do
 
@@ -32,6 +32,9 @@ bookkeeping: issued and received invoices, who owes you money, uploaded document
 Example questions: *"Jak si letos stojíme?"*, *"Kolik zaplatím DPH za tento kvartál?"*,
 *"Kdo mi dluží víc než 30 dní?"*, *"Je faktura 2026000123 zaplacená?"*,
 *"Na čem nejvíc utrácíme?"*, *"Stáhni mi PDF poslední vydané faktury."*
+
+More read tools are available as opt-in toolsets (`UOL_TOOLSETS`): `ledger` (general-ledger postings, internal
+documents), `banking` (bank movements, petty-cash documents) and `warehouse` (products, stock levels, orders).
 
 Ready-made prompts (slash commands in most clients): `monthly_review`, `vat_check`,
 `overdue_followup` (drafts reminders, sends nothing), `process_inbox`. The `uol://guide` resource
@@ -62,8 +65,9 @@ Want to try it first? `UOL_TENANT=demo` uses UOL's public DEMO company, no token
 | `UOL_EMAIL` | E-mail you log into UOL with |
 | `UOL_TOKEN` | API token |
 | `UOL_DOWNLOAD_DIR` | Where exported and downloaded files go (default `~/Downloads/uol-mcp`) |
-| `UOL_TOOLSETS` | `core`, `insights` or `all` (default) — fewer tools for clients with small tool budgets |
-| `UOL_ACCESS` | `read` (default) or `write` — see [Writing](#writing-opt-in) |
+| `UOL_TOOLSETS` | Comma-separated: `core`, `insights` (these two are the default), `ledger`, `banking`, `warehouse`, or `all` |
+| `UOL_ACCESS` | `read` (default), `write` or `full` — see [Writing](#writing-opt-in) |
+| `UOL_PROFILES_FILE` | Several companies in one server — see [Several companies](#several-companies) |
 | `UOL_UPLOAD_DIRS` | Folders `upload_document` may read from (default `~/Downloads`, `~/Desktop`, `~/Documents`; `:`-separated, `;` on Windows) |
 | `UOL_AUDIT_LOG` | File that records every write as a JSON line |
 | `UOL_DEBUG` | `1` logs requests to stderr (never credentials) |
@@ -153,17 +157,44 @@ UOL_TENANT=firma UOL_EMAIL=you@example.com UOL_TOKEN=your-token npx -y uol-mcp d
 
 ## Writing (opt-in)
 
-With `UOL_ACCESS=write` three more tools appear:
+With `UOL_ACCESS=write` these tools appear:
 
 | Tool | Does |
 |---|---|
 | `upload_document` | Uploads a PDF to UOL's document inbox for the accountant (only from `UOL_UPLOAD_DIRS`) |
 | `create_sales_invoice` | Creates an issued invoice for an existing contact — a draft unless `issue: true` |
 | `update_sales_invoice` | Changes or issues a draft invoice (UOL doesn't allow editing issued ones) |
+| `create_purchase_invoice` | Books a received invoice from an existing supplier |
+| `create_contact`, `update_contact` | Adds or changes a customer / supplier (refuses a duplicate IČO) |
+| `create_payment_demand` | Creates a payment demand (upomínka) for unpaid invoices of one customer — never sends it |
+| `mark_document_processed`, `pair_uploaded_document`, `tag_uploaded_document`, `untag_uploaded_document` | The accountant's inbox: state, link to the booked record, tags |
+
+`UOL_ACCESS=full` adds `delete_sales_invoice` (drafts only), `repair_sales_invoice` (storno or back to
+draft for issued invoices) and `api_request` (a raw write to any endpoint).
 
 Every write supports `dry_run` (shows exactly what would be sent), creates are safe to retry
 (idempotency key), and the tools are marked so clients ask you before running them. Set
 `UOL_AUDIT_LOG` to keep a record of every write.
+
+## Several companies
+
+Accountants with several clients on UOL can serve them all from one server. Point `UOL_PROFILES_FILE`
+at a JSON file:
+
+```json
+{
+  "default": "firma",
+  "accounts": {
+    "firma": { "tenant": "firma", "email": "ja@firma.cz", "token_env": "UOL_TOKEN_FIRMA" },
+    "novak": { "tenant": "novak", "email": "ja@firma.cz", "token_env": "UOL_TOKEN_NOVAK", "label": "Novák s.r.o." }
+  }
+}
+```
+
+`token_env` names an environment variable holding the token, so the file needs no secrets (an inline
+`token` works too; keep such a file `chmod 600`). The server then offers `list_accounts`, and every tool
+takes an `account` argument — *"Kdo dluží firmě Novák?"* goes to the right tenant. Each account keeps
+its own rate limit.
 
 ## Privacy and safety
 

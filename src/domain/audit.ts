@@ -3,6 +3,8 @@ import { appendFile } from 'node:fs/promises';
 
 export interface AuditEntry {
   tool: string;
+  /** UOL host the write went to — matters once several accounts are configured. */
+  tenant?: string;
   method: string;
   path: string;
   /** Hash of the request body, so the log proves what was sent without storing it. */

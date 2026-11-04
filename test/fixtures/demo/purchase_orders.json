@@ -1,0 +1,73 @@
+{
+  "_meta": {
+    "href": "https://test.demo.uol.cz/api/v1/purchase_orders",
+    "pagination": {
+      "first": "https://test.demo.uol.cz/api/v1/purchase_orders?page=1&per_page=2",
+      "last": "https://test.demo.uol.cz/api/v1/purchase_orders?page=1&per_page=2"
+    }
+  },
+  "items": [
+    {
+      "created_at": "2026-05-19T09:01:48+02:00",
+      "updated_at": "2026-05-19T09:25:25+02:00",
+      "creator": {
+        "user_id": "sevcikm"
+      },
+      "modifier": {
+        "user_id": "sevcikm"
+      },
+      "_meta": {
+        "href": "https://test.demo.uol.cz/api/v1/purchase_orders/2026000001"
+      },
+      "status": "unconfirmed",
+      "contact": {
+        "contact_id": "alzacz_as"
+      },
+      "currency": {
+        "currency_id": "CZK"
+      },
+      "date_of_receipt": "2026-05-19",
+      "department": {
+        "department_id": "praha"
+      },
+      "external_id": null,
+      "fullfilled_on": null,
+      "note": "test\ntest\ntest",
+      "contract": {
+        "contract_id": null
+      },
+      "order_id": 2026000001,
+      "send_by_email": false,
+      "send_by_mail": false,
+      "shipper_id": null,
+      "shipping_method": "seller",
+      "text": "1\n2\n3",
+      "valid_till": "2026-05-31",
+      "complete_upon_execution": false,
+      "items": [
+        {
+          "created_at": "2026-05-19T09:01:48+02:00",
+          "updated_at": "2026-05-19T09:01:48+02:00",
+          "creator": {
+            "user_id": "sevcikm"
+          },
+          "modifier": {
+            "user_id": "sevcikm"
+          },
+          "status": "valid",
+          "external_id": null,
+          "description": "ahoj-1_33",
+          "contact_product_id": null,
+          "order": {
+            "order_id": 2026000001
+          },
+          "product": {
+            "product_id": "ahoj-1_33"
+          },
+          "quantity": "1.0",
+          "total_price": "1.0"
+        }
+      ]
+    }
+  ]
+}

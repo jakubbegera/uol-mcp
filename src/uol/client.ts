@@ -246,8 +246,32 @@ export class UolClient {
   /** Drafts only; UOL answers 403 for an issued invoice. */
   updateSalesInvoice = (invoiceId: string, body: Record<string, unknown>) =>
     this.http.sendJson<RawSalesInvoice>('PATCH', `/v1/sales_invoices/${id(invoiceId)}`, body);
+  deleteSalesInvoice = (invoiceId: string) => this.http.request('DELETE', `/v1/sales_invoices/${id(invoiceId)}`);
+  /** Storno (`cancel`) or `disconfirm` of an issued document; FO = issued invoice. */
+  repairDocument = (body: Record<string, unknown>) =>
+    this.http.sendJson<Record<string, unknown>>('POST', '/v1/repairs', body);
+
+  createPurchaseInvoice = (body: Record<string, unknown>) =>
+    this.http.sendJson<RawPurchaseInvoice>('POST', '/v1/purchase_invoices', body);
+
+  createContact = (body: Record<string, unknown>) => this.http.sendJson<RawContact>('POST', '/v1/contacts', body);
+  updateContact = (contactId: string, body: Record<string, unknown>) =>
+    this.http.sendJson<RawContact>('PATCH', `/v1/contacts/${id(contactId)}`, body);
+
+  createPaymentDemand = (body: Record<string, unknown>) =>
+    this.http.sendJson<Record<string, unknown>>('POST', '/v1/demands_for_payment', body);
+
   /** Multipart with `file` (PDF) and optional `note`. */
   uploadDocument = (form: FormData) => this.http.postForm<RawUploadedDocument>('/v1/uploaded_documents', form);
+  /** The only state the API accepts is `processed`. */
+  setUploadedDocumentState = (documentId: string, state: string) =>
+    this.http.sendJson<RawUploadedDocument>('PATCH', `/v1/uploaded_documents/${id(documentId)}`, { state });
+  pairUploadedDocument = (documentId: string, body: Record<string, unknown>) =>
+    this.http.sendJson<RawUploadedDocument>('POST', `/v1/uploaded_documents/${id(documentId)}/pairings`, body);
+  tagUploadedDocument = (documentId: string, body: Record<string, unknown>) =>
+    this.http.sendJson<Record<string, unknown>>('POST', `/v1/uploaded_documents/${id(documentId)}/tags`, body);
+  untagUploadedDocument = (documentId: string, tagId: string) =>
+    this.http.request('DELETE', `/v1/uploaded_documents/${id(documentId)}/tags/${id(tagId)}`);
 
   list = (path: string, query: Query) => this.http.getJson<Page<Record<string, unknown>>>(path, query);
   get = (path: string, query?: Query) => this.http.getJson<unknown>(path, query);

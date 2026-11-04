@@ -47,7 +47,7 @@ export const salesRow = z.object({
   payment,
 });
 
-const purchaseRow = z.object({
+export const purchaseRow = z.object({
   invoice_id: z.string().describe('Internal id, usable with get_purchase_invoice'),
   number: z.string().nullable().describe("Supplier's invoice number"),
   type: z.string().nullable(),
@@ -117,7 +117,7 @@ export function salesRowOf(raw: RawSalesInvoice, names: Map<string, string | nul
   };
 }
 
-function purchaseRowOf(raw: RawPurchaseInvoice, names: Map<string, string | null>) {
+export function purchaseRowOf(raw: RawPurchaseInvoice, names: Map<string, string | null>) {
   const { vats: _vats, ...money } = totals(raw);
   const sellerId = hrefId(raw.seller);
   return {

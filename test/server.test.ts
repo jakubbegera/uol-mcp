@@ -297,7 +297,7 @@ describe('core tools against DEMO fixtures', () => {
 
     // assert
     expect(data).toMatchObject({ path: '/v1/products', truncated: false });
-    expect(data.data.items[0].product_id).toBe('p1');
+    expect(data.data.items[0].product_id).toBe('konzultace');
     expect(escaped.isError).toBe(true);
     expect(traversal.isError).toBe(true);
   });

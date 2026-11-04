@@ -38,8 +38,12 @@ const persons = new Set();
 for (const c of contacts) if (c.taxable_person === false || c.business_entity === false) persons.add(c.contact_id);
 for (const id of ids) if (PERSON_ID.test(id) && !LEGAL_FORM.test(id)) persons.add(id);
 
+// Continue after pseudonyms already in the fixtures, so a re-run (or a newly
+// recorded file) never hands an existing person_N to somebody else.
+const taken = Object.values(texts).flatMap((t) => [...t.matchAll(/\bperson_(\d+)\b/g)].map((m) => Number(m[1])));
+const offset = taken.length > 0 ? Math.max(...taken) : 0;
 const ordered = [...persons].sort();
-const idMap = new Map(ordered.map((id, i) => [id, `person_${i + 1}`]));
+const idMap = new Map(ordered.map((id, i) => [id, `person_${offset + i + 1}`]));
 const nameMap = new Map();
 for (const c of contacts) {
   if (idMap.has(c.contact_id) && c.name) nameMap.set(c.name, `Person ${idMap.get(c.contact_id).slice(7)}`);

@@ -1,0 +1,170 @@
+{
+  "_meta": {
+    "href": "https://test.demo.uol.cz/api/v1/petty_cash_disburstments",
+    "pagination": {
+      "first": "https://test.demo.uol.cz/api/v1/petty_cash_disburstments?page=1&per_page=3",
+      "last": "https://test.demo.uol.cz/api/v1/petty_cash_disburstments?page=49&per_page=3",
+      "next": "https://test.demo.uol.cz/api/v1/petty_cash_disburstments?page=2&per_page=3"
+    }
+  },
+  "items": [
+    {
+      "created_at": "2026-07-09T08:48:14+02:00",
+      "updated_at": "2026-07-09T08:49:53+02:00",
+      "creator": {
+        "user_id": "gieckoval"
+      },
+      "modifier": {
+        "user_id": "gieckoval"
+      },
+      "_meta": {
+        "href": "https://test.demo.uol.cz/api/v1/petty_cash_disburstments/2824406"
+      },
+      "items": [
+        {
+          "created_at": "2026-07-09T08:49:43+02:00",
+          "updated_at": "2026-07-09T08:49:43+02:00",
+          "creator": {
+            "user_id": "gieckoval"
+          },
+          "modifier": {
+            "user_id": "gieckoval"
+          },
+          "external_id": null,
+          "rule": {
+            "rule_id": "-uhr_cestovneho"
+          },
+          "variable_symbol": null,
+          "price": "10730.0",
+          "description": "Výplata cestovného",
+          "department": {
+            "department_id": null
+          },
+          "contract": {
+            "contract_id": null
+          },
+          "linked_doc_number": null
+        }
+      ],
+      "number": 2026000005,
+      "issue_date": "2026-05-03",
+      "receipt_date": "2026-05-03",
+      "note": "Výplata cestovného",
+      "coefficient": false,
+      "petty_cash": {
+        "petty_cash_id": "p1_czk"
+      },
+      "department": {
+        "department_id": "brno"
+      },
+      "total": "10730.0",
+      "contact": {
+        "contact_id": null
+      },
+      "contract": {
+        "contract_id": null
+      },
+      "vat_document": false,
+      "confirmed": true,
+      "status": "valid",
+      "gid": 2824406
+    },
+    {
+      "created_at": "2026-07-07T11:24:48+02:00",
+      "updated_at": "2026-07-07T11:24:48+02:00",
+      "creator": {
+        "user_id": "robot"
+      },
+      "modifier": {
+        "user_id": "cestrovam"
+      },
+      "_meta": {
+        "href": "https://test.demo.uol.cz/api/v1/petty_cash_disburstments/2824014"
+      },
+      "items": [
+        {
+          "created_at": "2026-07-07T11:24:48+02:00",
+          "updated_at": "2026-07-07T11:24:48+02:00",
+          "creator": {
+            "user_id": "robot"
+          },
+          "modifier": {
+            "user_id": "robot"
+          },
+          "external_id": null,
+          "rule": {
+            "rule_id": "-faktura"
+          },
+          "variable_symbol": 20240098,
+          "price": "4950.0",
+          "description": "Úhrada faktury 2024000022",
+          "department": {
+            "department_id": null
+          },
+          "contract": {
+            "contract_id": null
+          },
+          "linked_doc_number": 2024000022
+        }
+      ],
+      "number": 2024000007,
+      "issue_date": "2024-09-23",
+      "receipt_date": "2024-09-23",
+      "note": "Úhrada faktury",
+      "coefficient": false,
+      "petty_cash": {
+        "petty_cash_id": "p1_czk"
+      },
+      "department": {
+        "department_id": "brno"
+      },
+      "total": "4950.0",
+      "contact": {
+        "contact_id": "person_4"
+      },
+      "contract": {
+        "contract_id": null
+      },
+      "vat_document": false,
+      "confirmed": true,
+      "status": "valid",
+      "gid": 2824014
+    },
+    {
+      "created_at": "2026-05-25T09:40:18+02:00",
+      "updated_at": "2026-05-25T09:40:28+02:00",
+      "creator": {
+        "user_id": "gieckoval"
+      },
+      "modifier": {
+        "user_id": "gieckoval"
+      },
+      "_meta": {
+        "href": "https://test.demo.uol.cz/api/v1/petty_cash_disburstments/2820848"
+      },
+      "items": [],
+      "number": 2025000013,
+      "issue_date": "2025-05-19",
+      "receipt_date": "2025-05-19",
+      "note": "Úhrada cestovného",
+      "coefficient": false,
+      "petty_cash": {
+        "petty_cash_id": "p1_czk"
+      },
+      "department": {
+        "department_id": "brno"
+      },
+      "total": "0.0",
+      "contact": {
+        "contact_id": null
+      },
+      "contract": {
+        "contract_id": null
+      },
+      "vat_document": false,
+      "confirmed": false,
+      "status": "valid",
+      "gid": 2820848
+    }
+  ]
+}

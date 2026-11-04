@@ -56,7 +56,34 @@ describe('access levels', () => {
     const writes = Object.fromEntries(
       tools.filter((t) => t.annotations?.readOnlyHint === false).map((t) => [t.name, t.annotations?.destructiveHint]),
     );
-    expect(writes).toEqual({ upload_document: false, create_sales_invoice: false, update_sales_invoice: true });
+    expect(writes).toEqual({
+      upload_document: false,
+      create_sales_invoice: false,
+      update_sales_invoice: true,
+      create_contact: false,
+      update_contact: true,
+      create_purchase_invoice: false,
+      create_payment_demand: false,
+      mark_document_processed: false,
+      pair_uploaded_document: false,
+      tag_uploaded_document: false,
+      untag_uploaded_document: true,
+    });
+  });
+
+  it('adds the destructive tools only with UOL_ACCESS=full', async () => {
+    // arrange
+    client = await connect(demoConfig(tmpdir(), { access: 'full' }));
+
+    // act
+    const { tools } = await client.listTools();
+
+    // assert
+    const names = tools.map((t) => t.name);
+    expect(names).toEqual(expect.arrayContaining(['delete_sales_invoice', 'repair_sales_invoice', 'api_request']));
+    for (const name of ['delete_sales_invoice', 'repair_sales_invoice', 'api_request']) {
+      expect(tools.find((t) => t.name === name)?.annotations?.destructiveHint, name).toBe(true);
+    }
   });
 });
 

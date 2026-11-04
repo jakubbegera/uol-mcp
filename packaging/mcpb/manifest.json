@@ -37,7 +37,8 @@
         "UOL_EMAIL": "${user_config.email}",
         "UOL_TOKEN": "${user_config.token}",
         "UOL_DOWNLOAD_DIR": "${user_config.download_dir}",
-        "UOL_ACCESS": "${user_config.access}"
+        "UOL_ACCESS": "${user_config.access}",
+        "UOL_TOOLSETS": "${user_config.toolsets}"
       }
     }
   },
@@ -71,9 +72,16 @@
     "access": {
       "type": "string",
       "title": "Access",
-      "description": "read (default) — the assistant can only read. write — it may also upload documents and create or edit draft invoices; Claude asks before each write.",
+      "description": "read (default) — the assistant can only read. write — it may also upload documents, create or edit draft invoices, contacts and payment demands; Claude asks before each write. full — also deleting drafts and cancelling issued invoices.",
       "required": false,
       "default": "read"
+    },
+    "toolsets": {
+      "type": "string",
+      "title": "Tool groups",
+      "description": "core,insights (default). Add ledger, banking or warehouse, or use all.",
+      "required": false,
+      "default": "core,insights"
     }
   },
   "tools": [
@@ -160,6 +168,82 @@
     {
       "name": "update_sales_invoice",
       "description": "Edit or issue a draft invoice (access=write)"
+    },
+    {
+      "name": "create_purchase_invoice",
+      "description": "Book a received invoice (access=write)"
+    },
+    {
+      "name": "create_contact",
+      "description": "Add a customer or supplier (access=write)"
+    },
+    {
+      "name": "update_contact",
+      "description": "Change a contact (access=write)"
+    },
+    {
+      "name": "create_payment_demand",
+      "description": "Create a payment demand (access=write)"
+    },
+    {
+      "name": "mark_document_processed",
+      "description": "Mark an uploaded document processed (access=write)"
+    },
+    {
+      "name": "pair_uploaded_document",
+      "description": "Pair an uploaded document with its record (access=write)"
+    },
+    {
+      "name": "tag_uploaded_document",
+      "description": "Tag an uploaded document (access=write)"
+    },
+    {
+      "name": "untag_uploaded_document",
+      "description": "Remove a tag (access=write)"
+    },
+    {
+      "name": "delete_sales_invoice",
+      "description": "Delete a draft invoice (access=full)"
+    },
+    {
+      "name": "repair_sales_invoice",
+      "description": "Cancel or disconfirm an issued invoice (access=full)"
+    },
+    {
+      "name": "api_request",
+      "description": "Raw write to the UOL API (access=full)"
+    },
+    {
+      "name": "search_accounting_records",
+      "description": "General-ledger postings (toolset ledger)"
+    },
+    {
+      "name": "list_internal_documents",
+      "description": "Internal documents (toolset ledger)"
+    },
+    {
+      "name": "list_bank_movements",
+      "description": "Bank movements (toolset banking)"
+    },
+    {
+      "name": "list_cash_documents",
+      "description": "Petty-cash documents (toolset banking)"
+    },
+    {
+      "name": "search_products",
+      "description": "Products (toolset warehouse)"
+    },
+    {
+      "name": "get_product",
+      "description": "Product detail (toolset warehouse)"
+    },
+    {
+      "name": "get_stock_levels",
+      "description": "Stock levels (toolset warehouse)"
+    },
+    {
+      "name": "list_orders",
+      "description": "Sales and purchase orders (toolset warehouse)"
     }
   ],
   "compatibility": {

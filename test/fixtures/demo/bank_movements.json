@@ -1,0 +1,222 @@
+{
+  "_meta": {
+    "href": "https://test.demo.uol.cz/api/v1/bank_movements",
+    "pagination": {
+      "first": "https://test.demo.uol.cz/api/v1/bank_movements?page=1&per_page=3",
+      "last": "https://test.demo.uol.cz/api/v1/bank_movements?page=20&per_page=3",
+      "next": "https://test.demo.uol.cz/api/v1/bank_movements?page=2&per_page=3"
+    }
+  },
+  "items": [
+    {
+      "_meta": {
+        "href": "https://test.demo.uol.cz/api/v1/bank_movements/2819662"
+      },
+      "creator": {
+        "user_id": "jac"
+      },
+      "modifier": {
+        "user_id": "jac"
+      },
+      "bank_account": {
+        "bank_account_id": "cs_czk"
+      },
+      "contact": {
+        "contact_id": null
+      },
+      "gid": 2819662,
+      "bank_movement_id": 94,
+      "constant_symbol": null,
+      "specific_symbol": null,
+      "variable_symbol": null,
+      "amount": "1.0",
+      "status": "valid",
+      "contact_bank_account": null,
+      "iban": null,
+      "note": null,
+      "created_at": "2026-05-11T16:40:03+02:00",
+      "updated_at": "2026-05-11T16:40:03+02:00",
+      "external_id": null,
+      "items": [
+        {
+          "number": 94,
+          "amount": "1.0",
+          "confirmed": false,
+          "note": null,
+          "variable_symbol": null,
+          "specific_symbol": null,
+          "constant_symbol": null,
+          "date": "2026-05-11",
+          "created_at": "2026-05-11T16:40:03+02:00",
+          "updated_at": "2026-05-11T16:40:03+02:00",
+          "external_id": null,
+          "creator": {
+            "user_id": "robot"
+          },
+          "modifier": {
+            "user_id": "robot"
+          },
+          "payment_rule": {
+            "payment_rule_id": "+neco"
+          },
+          "bank_account": {
+            "bank_account_id": "cs_czk"
+          },
+          "contact": {
+            "contact_id": null
+          },
+          "department": {
+            "department_id": null
+          },
+          "contract": {
+            "contract_id": null
+          },
+          "linked_doc": {
+            "linked_doc_number": null,
+            "linked_doc_code": null
+          }
+        }
+      ]
+    },
+    {
+      "_meta": {
+        "href": "https://test.demo.uol.cz/api/v1/bank_movements/2819660"
+      },
+      "creator": {
+        "user_id": "jac"
+      },
+      "modifier": {
+        "user_id": "jac"
+      },
+      "bank_account": {
+        "bank_account_id": "cs_czk"
+      },
+      "contact": {
+        "contact_id": null
+      },
+      "gid": 2819660,
+      "bank_movement_id": 93,
+      "constant_symbol": null,
+      "specific_symbol": null,
+      "variable_symbol": null,
+      "amount": "12345.0",
+      "status": "valid",
+      "contact_bank_account": null,
+      "iban": null,
+      "note": null,
+      "created_at": "2026-05-11T16:39:37+02:00",
+      "updated_at": "2026-05-11T16:39:37+02:00",
+      "external_id": null,
+      "items": [
+        {
+          "number": 93,
+          "amount": "12345.0",
+          "confirmed": false,
+          "note": null,
+          "variable_symbol": null,
+          "specific_symbol": null,
+          "constant_symbol": null,
+          "date": "2026-05-11",
+          "created_at": "2026-05-11T16:39:37+02:00",
+          "updated_at": "2026-05-11T16:39:37+02:00",
+          "external_id": null,
+          "creator": {
+            "user_id": "robot"
+          },
+          "modifier": {
+            "user_id": "robot"
+          },
+          "payment_rule": {
+            "payment_rule_id": "+neco"
+          },
+          "bank_account": {
+            "bank_account_id": "cs_czk"
+          },
+          "contact": {
+            "contact_id": null
+          },
+          "department": {
+            "department_id": null
+          },
+          "contract": {
+            "contract_id": null
+          },
+          "linked_doc": {
+            "linked_doc_number": null,
+            "linked_doc_code": null
+          }
+        }
+      ]
+    },
+    {
+      "_meta": {
+        "href": "https://test.demo.uol.cz/api/v1/bank_movements/2819658"
+      },
+      "creator": {
+        "user_id": "jac"
+      },
+      "modifier": {
+        "user_id": "jac"
+      },
+      "bank_account": {
+        "bank_account_id": "cs_czk"
+      },
+      "contact": {
+        "contact_id": null
+      },
+      "gid": 2819658,
+      "bank_movement_id": 92,
+      "constant_symbol": null,
+      "specific_symbol": null,
+      "variable_symbol": null,
+      "amount": "1234.0",
+      "status": "valid",
+      "contact_bank_account": null,
+      "iban": null,
+      "note": null,
+      "created_at": "2026-05-11T16:39:18+02:00",
+      "updated_at": "2026-05-11T16:39:18+02:00",
+      "external_id": null,
+      "items": [
+        {
+          "number": 92,
+          "amount": "1234.0",
+          "confirmed": false,
+          "note": null,
+          "variable_symbol": null,
+          "specific_symbol": null,
+          "constant_symbol": null,
+          "date": "2026-05-11",
+          "created_at": "2026-05-11T16:39:18+02:00",
+          "updated_at": "2026-05-11T16:39:18+02:00",
+          "external_id": null,
+          "creator": {
+            "user_id": "robot"
+          },
+          "modifier": {
+            "user_id": "robot"
+          },
+          "payment_rule": {
+            "payment_rule_id": "+neco"
+          },
+          "bank_account": {
+            "bank_account_id": "cs_czk"
+          },
+          "contact": {
+            "contact_id": null
+          },
+          "department": {
+            "department_id": null
+          },
+          "contract": {
+            "contract_id": null
+          },
+          "linked_doc": {
+            "linked_doc_number": null,
+            "linked_doc_code": null
+          }
+        }
+      ]
+    }
+  ]
+}

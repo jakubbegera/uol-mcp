@@ -1,0 +1,189 @@
+{
+  "_meta": {
+    "href": "https://test.demo.uol.cz/api/v1/petty_cash_incomes",
+    "pagination": {
+      "first": "https://test.demo.uol.cz/api/v1/petty_cash_incomes?page=1&per_page=3",
+      "last": "https://test.demo.uol.cz/api/v1/petty_cash_incomes?page=48&per_page=3",
+      "next": "https://test.demo.uol.cz/api/v1/petty_cash_incomes?page=2&per_page=3"
+    }
+  },
+  "items": [
+    {
+      "created_at": "2014-10-03T21:54:45+02:00",
+      "updated_at": "2014-10-03T21:54:45+02:00",
+      "creator": {
+        "user_id": "robot"
+      },
+      "modifier": {
+        "user_id": "robot"
+      },
+      "_meta": {
+        "href": "https://test.demo.uol.cz/api/v1/petty_cash_incomes/65534"
+      },
+      "items": [
+        {
+          "created_at": "2014-10-03T21:54:45+02:00",
+          "updated_at": "2014-10-03T21:54:45+02:00",
+          "creator": {
+            "user_id": "robot"
+          },
+          "modifier": {
+            "user_id": "jakes"
+          },
+          "external_id": null,
+          "rule": {
+            "rule_id": "+faktura"
+          },
+          "variable_symbol": 2014000002,
+          "price": "121000.0",
+          "description": "Úhrada faktury 2014000002",
+          "department": {
+            "department_id": null
+          },
+          "contract": {
+            "contract_id": null
+          },
+          "linked_doc_number": 2014000002
+        }
+      ],
+      "number": 2014000001,
+      "issue_date": "2014-08-31",
+      "note": "Úhrada faktury",
+      "petty_cash": {
+        "petty_cash_id": "p1_czk"
+      },
+      "department": {
+        "department_id": null
+      },
+      "total": "121000.0",
+      "contact": {
+        "contact_id": "porsche_ceska_republik"
+      },
+      "contract": {
+        "contract_id": null
+      },
+      "vat_document": false,
+      "confirmed": true,
+      "status": "valid",
+      "gid": 65534
+    },
+    {
+      "created_at": "2014-10-03T22:07:22+02:00",
+      "updated_at": "2014-10-03T22:08:24+02:00",
+      "creator": {
+        "user_id": "jakes"
+      },
+      "modifier": {
+        "user_id": "jakes"
+      },
+      "_meta": {
+        "href": "https://test.demo.uol.cz/api/v1/petty_cash_incomes/65576"
+      },
+      "items": [
+        {
+          "created_at": "2014-10-03T22:07:52+02:00",
+          "updated_at": "2014-10-03T22:07:52+02:00",
+          "creator": {
+            "user_id": "jakes"
+          },
+          "modifier": {
+            "user_id": "jakes"
+          },
+          "external_id": null,
+          "rule": {
+            "rule_id": "+faktura"
+          },
+          "variable_symbol": 2014000006,
+          "price": "4235.0",
+          "description": "Úhrada faktury 2014000006",
+          "department": {
+            "department_id": null
+          },
+          "contract": {
+            "contract_id": null
+          },
+          "linked_doc_number": 2014000006
+        }
+      ],
+      "number": 2014000001,
+      "issue_date": "2014-10-02",
+      "note": "Úhrada faktury",
+      "petty_cash": {
+        "petty_cash_id": "p1_eur"
+      },
+      "department": {
+        "department_id": null
+      },
+      "total": "4235.0",
+      "contact": {
+        "contact_id": "bychl_auto_as"
+      },
+      "contract": {
+        "contract_id": null
+      },
+      "vat_document": false,
+      "confirmed": true,
+      "status": "valid",
+      "gid": 65576
+    },
+    {
+      "created_at": "2014-10-21T14:13:11+02:00",
+      "updated_at": "2014-10-21T14:13:11+02:00",
+      "creator": {
+        "user_id": "jakes"
+      },
+      "modifier": {
+        "user_id": "jakes"
+      },
+      "_meta": {
+        "href": "https://test.demo.uol.cz/api/v1/petty_cash_incomes/65916"
+      },
+      "items": [
+        {
+          "created_at": "2014-10-21T14:13:11+02:00",
+          "updated_at": "2014-10-21T14:13:11+02:00",
+          "creator": {
+            "user_id": "robot"
+          },
+          "modifier": {
+            "user_id": "jakes"
+          },
+          "external_id": null,
+          "rule": {
+            "rule_id": "+prodejna"
+          },
+          "variable_symbol": 2014000001,
+          "price": "600.0",
+          "description": null,
+          "department": {
+            "department_id": null
+          },
+          "contract": {
+            "contract_id": null
+          },
+          "linked_doc_number": 2014000001
+        }
+      ],
+      "number": 2014000005,
+      "issue_date": "2014-09-10",
+      "note": "Maloobchodní prodej SIDLO",
+      "petty_cash": {
+        "petty_cash_id": "p1_czk"
+      },
+      "department": {
+        "department_id": "sidlo"
+      },
+      "total": "600.0",
+      "contact": {
+        "contact_id": null
+      },
+      "contract": {
+        "contract_id": null
+      },
+      "vat_document": false,
+      "confirmed": true,
+      "status": "valid",
+      "gid": 65916
+    }
+  ]
+}

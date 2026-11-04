@@ -9,7 +9,7 @@ vydané a přijaté faktury, kdo vám dluží, nahrané doklady, kontakty.
 
 [English](README.md)
 
-**Stav:** verze 0.3, ve výchozím stavu pouze čtení, zápis lze zapnout. Zatím není na npm; do prvního
+**Stav:** verze 0.4, ve výchozím stavu pouze čtení, zápis lze zapnout. Zatím není na npm; do prvního
 vydání se spouští [ze zdrojového kódu](README.md#from-source).
 
 ## Co umí
@@ -87,10 +87,22 @@ S `UOL_ACCESS=write` (v Claude Desktop rozšíření pole „Access“ = `write`
 
 - **nahrát doklad** (PDF) účetní do UOL, a to jen ze složek Stažené soubory, Plocha a Dokumenty;
 - **vystavit fakturu** existujícímu kontaktu, standardně jako koncept;
-- **upravit nebo vystavit koncept faktury**; už vystavenou fakturu UOL měnit nedovolí.
+- **upravit nebo vystavit koncept faktury**; už vystavenou fakturu UOL měnit nedovolí;
+- **zaevidovat přijatou fakturu**, **založit nebo upravit kontakt** (s kontrolou duplicitního IČO);
+- **vytvořit upomínku** k neuhrazeným fakturám jednoho odběratele (nic se neodesílá);
+- **zpracovat nahrané doklady**: označit jako zpracované, spárovat s fakturou, přidat štítek.
+
+S `UOL_ACCESS=full` navíc smazání konceptu faktury, storno nebo vrácení vystavené faktury do konceptu
+a obecný zápis do libovolného endpointu.
 
 Před každým zápisem si asistent nechá vše ukázat nanečisto a klient vás požádá o souhlas.
 Opakované vytvoření stejné faktury nevznikne dvakrát.
+
+## Více firem (pro účetní)
+
+Jeden server obslouží víc klientských firem: v souboru `UOL_PROFILES_FILE` je seznam účtů (tenant,
+e-mail, token nebo název proměnné s tokenem). Asistent pak u každého dotazu ví, které firmy se týká,
+třeba „Kdo dluží firmě Novák?“. Formát souboru popisuje [anglické README](README.md#several-companies).
 
 ## Soukromí a bezpečnost
 

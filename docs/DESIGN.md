@@ -68,6 +68,9 @@ code, in a tool description, or in the server instructions.
 | 21 | Corrective invoices (`type: corrective`, dobropis) carry **positive** `total_amount` and VAT on the invoice endpoints; only `/receivables` shows them negative. | The invoice-based VAT estimate subtracts them. |
 | 22 | Ledger rows have `amount` in the document currency and `accounting_amount` in the home currency. `credit_account` / `debit_account` filters match by **prefix** (`6` → every 6xx account). | Aggregate `accounting_amount`; read revenue and expenses with four filtered queries instead of the whole journal. |
 | 23 | Year-end closing entries move class 5 / 6 balances to class 7 (e.g. 710). | Postings against class 7 are excluded from revenue / expense sums. |
+| 24 | A pairing is created with the target's `gid`; invoices expose it on their detail, petty-cash documents in their list. | `pair_uploaded_document` takes an invoice_id and resolves the gid itself. |
+| 25 | Bank movements carry their date only on their parts (`items[].date`), and the list has no date filter. | The movement row takes the date of its first part. |
+| 26 | Purchase-invoice lines are written as line totals (`total_price` / `total_price_vat_inclusive`), sales-invoice lines as unit prices. | The two create tools use different item shapes on purpose. |
 
 Error codes from the spec: `0001` missing auth, `0002` bad credentials or missing permission,
 `0003` unknown tenant, `0004` not found, `0005` cannot delete (integrity), `0010` internal error.
@@ -115,10 +118,10 @@ Desktop — the two paths that reach non-developers.
 | `UOL_TIMEOUT_MS` | `30000` | Per-request timeout | 0.1 |
 | `UOL_DEBUG` | off | Request log on stderr (path, status, duration; never credentials) | 0.1 |
 | `UOL_ACCESS` | `read` | `read` · `write` (adds upload / create / update) · `full` (same as write for now; will add destructive tools and generic writes) | 0.3 |
-| `UOL_TOOLSETS` | `all` | Tool groups to register (§4): `core`, `insights` (later also `ledger, banking, warehouse`), or `all`. Unknown names are reported on stderr. | 0.2 |
+| `UOL_TOOLSETS` | `core,insights` | Tool groups to register (§4): `core`, `insights`, `ledger`, `banking`, `warehouse`, or `all`. Unknown names are reported on stderr. | 0.2 |
 | `UOL_UPLOAD_DIRS` | `~/Downloads:~/Desktop:~/Documents` | Directories `upload_document` may read from | 0.3 |
 | `UOL_AUDIT_LOG` | — | JSONL file recording every write (tool, endpoint, payload hash, result id) | 0.3 |
-| `UOL_PROFILES_FILE` | — | Several tenants; adds an `account` argument to every tool and a `list_accounts` tool | 0.4 |
+| `UOL_PROFILES_FILE` | — | JSON with several tenants (`accounts`, `default`; per account `tenant`, `email`, `token` or `token_env`, `label`). Adds `list_accounts` and, with more than one account, an `account` argument to every tool; each account keeps its own rate limiter. Replaces `UOL_TENANT`/`UOL_EMAIL`/`UOL_TOKEN`. A file with inline tokens that others can read is reported. | 0.4 |
 | `MCP_TRANSPORT` | `stdio` | `http` starts the HTTP transport (same as `--http`) | 0.3 |
 | `MCP_AUTH_TOKEN`, `PORT`, `HOST` | —, 3000, 127.0.0.1 | HTTP mode | 0.3 |
 | `MCP_ALLOWED_HOSTS`, `MCP_ALLOWED_ORIGINS` | localhost names | Accepted `Host` / browser `Origin` hostnames, comma-separated | 0.3 |
@@ -156,7 +159,8 @@ src/
     files.ts            safe file names, saving downloads
     uploads.ts          reading upload files: allowed folders, PDF check, size cap
     audit.ts            JSONL audit log of writes
-  tools/                one module per area: register…Tools(server, ctx); writes.ts for UOL_ACCESS=write
+  tools/                one module per area: register…Tools(server, ctx); writes*.ts for UOL_ACCESS=write,
+                        destructive.ts for full, accounts.ts for UOL_PROFILES_FILE
 test/
   fixtures/demo/        raw responses recorded from the DEMO tenant (scripts/record-fixtures.sh,
                         natural persons pseudonymised by scripts/scrub-fixtures.mjs)
@@ -206,14 +210,16 @@ server.json             MCP Registry entry; the release workflow adds the MCPB p
 | insights | `get_bank_balances` | `/bank_balances` | Snapshot semantics; newest per account, per currency, optional history. |
 | insights | `get_business_snapshot` | all of the above + receivables, documents | This month, VAT, receivables, documents to process, bank balance with `as_of`; failing sections are reported, not fatal. |
 | ledger | `search_accounting_records` | `/accounting_records` | Date range, debit / credit account prefix, linked document. |
-| ledger | `list_internal_documents` | `/internal_documents` | Client-side date / note filter. |
-| banking | `list_bank_movements` | `/bank_movements` | |
-| banking | `list_cash_documents(kind)` | `/petty_cash_incomes`, `/petty_cash_disburstments` | |
+| ledger | `list_internal_documents` | `/internal_documents` | Read in full (bounded), filtered by date and note text; lines capped per document. |
+| banking | `list_bank_movements` | `/bank_movements` | Paging only; parts with their pairings (§2 #25). |
+| banking | `list_cash_documents(kind)` | `/petty_cash_incomes`, `/petty_cash_disburstments` | Includes `gid` for pairings. |
 | warehouse | `search_products`, `get_product` | `/products` | |
-| warehouse | `get_stock_levels` | `/warehouse/statuses` | |
-| warehouse | `list_orders(kind)` | `/sales_orders`, `/purchase_orders` | |
+| warehouse | `get_stock_levels` | `/warehouse/statuses` | Quantity and expiry filters. |
+| warehouse | `list_orders(kind)` | `/sales_orders`, `/purchase_orders` | Filters for sales orders only. |
+| (profiles) | `list_accounts` | — | Only with `UOL_PROFILES_FILE`; never returns credentials. |
 
 All read tools are annotated `readOnlyHint: true, idempotentHint: true, openWorldHint: true`.
+`core` + `insights` (the default) register 18 tools; `all` registers 26.
 
 ### 4.2 Write (`UOL_ACCESS=write`)
 
@@ -222,17 +228,20 @@ All read tools are annotated `readOnlyHint: true, idempotentHint: true, openWorl
 | `upload_document(file_path \| content_base64, note)` | `POST /uploaded_documents` (multipart) | The path must resolve (symlinks followed) inside `UOL_UPLOAD_DIRS`; PDF only (extension and `%PDF-` header); 20 MB cap. A duplicate names the existing document. |
 | `create_sales_invoice` | `POST /sales_invoices` | Draft unless `issue: true`; buyer verified first; auto `idempotency_key` — a repeated key returns the first invoice (`already_existed`); `dry_run` returns the payload without sending |
 | `update_sales_invoice` | `PATCH /sales_invoices/{id}` | Drafts only, checked before sending; header fields, `add_items`, `remove_item_ids` (`_destroy`), `issue: true`; only given fields are sent; `destructiveHint: true` |
-| `create_contact`, `update_contact` | `POST/PATCH /contacts` | later |
-| `create_purchase_invoice` | `POST /purchase_invoices` | later; `idempotency_key`, `dry_run` |
-| `set_uploaded_document_state`, `pair_uploaded_document`, `tag_uploaded_document`, `untag_uploaded_document` | `PATCH /uploaded_documents/{id}`, `…/pairings`, `…/tags` | later |
-| `create_payment_demand` | `POST /demands_for_payment` | later |
+| `create_contact` | `POST /contacts` | Refuses a second contact with the same IČO unless `allow_duplicate`; address fields form the accounting address |
+| `update_contact` | `PATCH /contacts/{id}` | Updates the accounting address by its `address_id` (or adds one); `destructiveHint: true` |
+| `create_purchase_invoice` | `POST /purchase_invoices` | Supplier verified first; line totals (§2 #26); unconfirmed unless `confirm: true`; `idempotency_key` with the same recovery as sales invoices |
+| `create_payment_demand` | `POST /demands_for_payment` | Every invoice must be an unpaid issued invoice of one customer; `send_by_email` / `send_by_mail` always false |
+| `mark_document_processed` | `PATCH /uploaded_documents/{id}` | The only state the API accepts; idempotent |
+| `pair_uploaded_document` | `POST …/pairings` | Resolves the target's gid (§2 #24) |
+| `tag_uploaded_document`, `untag_uploaded_document` | `POST/DELETE …/tags` | Tag types as enum; untag is `destructiveHint: true` |
 
 ### 4.3 Destructive (`UOL_ACCESS=full`)
 
 | Tool | API | Notes |
 |---|---|---|
-| `delete_sales_invoice` | `DELETE /sales_invoices/{id}` | `destructiveHint: true` |
-| `repair_document(method)` | `POST /repairs` | `cancel` (storno) / `disconfirm`; 422 reasons surfaced verbatim |
+| `delete_sales_invoice` | `DELETE /sales_invoices/{id}` | Drafts only, checked first |
+| `repair_sales_invoice(method)` | `POST /repairs` (`document_type: FO`) | Issued invoices only; `cancel` (storno) / `disconfirm` (back to draft); 422 reasons surfaced verbatim |
 | `api_request(method, path, body)` | any `/v1` path | Generic write for everything without a dedicated tool |
 
 **Write safety, in layers:** off by default → annotations make the host ask for approval → tool
@@ -338,7 +347,7 @@ Neither is planned for the first releases.
 | **v0.1** | Config, HTTP client + rate limit + errors, `core` read tools, stdio, fixture tests, README (EN + CS), MIT |
 | **v0.2** | `insights` tools, resources + prompts, toolsets, MCPB bundle, `server.json`, Docker image, CI and release workflows (publishing waits for the public release) |
 | **v0.3** | `upload_document`, `create_sales_invoice`, `update_sales_invoice` with idempotency / dry run / audit log; `UOL_ACCESS`; HTTP transport (single-tenant + pass-through) |
-| **v0.4** | Remaining writes, multi-tenant profiles, destructive tools, remaining toolsets |
+| **v0.4** | Contacts, purchase invoices, payment demands, document workflow; `UOL_ACCESS=full` (delete, repair, generic write); `UOL_PROFILES_FILE`; `ledger`, `banking`, `warehouse` toolsets |
 
 ---
 

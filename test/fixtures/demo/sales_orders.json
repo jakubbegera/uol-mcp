@@ -1,0 +1,178 @@
+{
+  "_meta": {
+    "href": "https://test.demo.uol.cz/api/v1/sales_orders",
+    "pagination": {
+      "first": "https://test.demo.uol.cz/api/v1/sales_orders?page=1&per_page=2",
+      "last": "https://test.demo.uol.cz/api/v1/sales_orders?page=3&per_page=2",
+      "next": "https://test.demo.uol.cz/api/v1/sales_orders?page=2&per_page=2"
+    }
+  },
+  "items": [
+    {
+      "created_at": "2026-05-19T08:40:59+02:00",
+      "updated_at": "2026-06-12T10:12:19+02:00",
+      "creator": {
+        "user_id": "sevcikm"
+      },
+      "modifier": {
+        "user_id": "sevcikm"
+      },
+      "_meta": {
+        "href": "https://test.demo.uol.cz/api/v1/sales_orders/2025000005"
+      },
+      "accounting_address": {
+        "address_id": "novaadrrr"
+      },
+      "buyer_address": {
+        "address_id": null
+      },
+      "document_recipient_address": {
+        "address_id": null
+      },
+      "delivery_address": {
+        "address_id": null
+      },
+      "contact": {
+        "contact_id": "bychl_auto_as"
+      },
+      "currency": {
+        "currency_id": "CZK"
+      },
+      "date_of_receipt": "2025-10-02",
+      "delivery_method": "complete_order",
+      "department": {
+        "department_id": "praha"
+      },
+      "percent_discount": 50,
+      "external_id": null,
+      "fullfilled_on": "2026-06-12",
+      "group_id": null,
+      "invoicing_method": "after_fullfillment",
+      "status": "valid",
+      "order_id": 2025000005,
+      "contract": {
+        "contract_id": null
+      },
+      "shipper_id": null,
+      "shipping_method": "seller",
+      "specific_symbol": null,
+      "payment_method": "bank_transfer",
+      "complete_upon_execution": false,
+      "repeat_start": null,
+      "repeat_interval": null,
+      "next_repeat_time": null,
+      "text": "1<br>\n2<br>\n3",
+      "note": null,
+      "items": [
+        {
+          "id": 2820470,
+          "created_at": "2026-05-19T08:40:59+02:00",
+          "updated_at": "2026-05-19T08:40:59+02:00",
+          "creator": {
+            "user_id": "sevcikm"
+          },
+          "modifier": {
+            "user_id": "sevcikm"
+          },
+          "batch": null,
+          "expiration_date": null,
+          "external_id": null,
+          "status": "valid",
+          "order": {
+            "order_id": 2025000005
+          },
+          "product": {
+            "product_id": "marketing"
+          },
+          "quantity": "1.0",
+          "description": "Marketingové poradenství",
+          "serial_numbers": null,
+          "unit_price": "1000.0"
+        }
+      ]
+    },
+    {
+      "created_at": "2026-04-23T17:43:36+02:00",
+      "updated_at": "2026-06-12T10:11:49+02:00",
+      "creator": {
+        "user_id": "jac"
+      },
+      "modifier": {
+        "user_id": "sevcikm"
+      },
+      "_meta": {
+        "href": "https://test.demo.uol.cz/api/v1/sales_orders/2025000004"
+      },
+      "accounting_address": {
+        "address_id": "novaadrrr"
+      },
+      "buyer_address": {
+        "address_id": null
+      },
+      "document_recipient_address": {
+        "address_id": null
+      },
+      "delivery_address": {
+        "address_id": null
+      },
+      "contact": {
+        "contact_id": "bychl_auto_as"
+      },
+      "currency": {
+        "currency_id": "CZK"
+      },
+      "date_of_receipt": "2025-10-02",
+      "delivery_method": "complete_order",
+      "department": {
+        "department_id": "praha"
+      },
+      "percent_discount": 50,
+      "external_id": null,
+      "fullfilled_on": null,
+      "group_id": null,
+      "invoicing_method": "after_fullfillment",
+      "status": "valid",
+      "order_id": 2025000004,
+      "contract": {
+        "contract_id": null
+      },
+      "shipper_id": null,
+      "shipping_method": "seller",
+      "specific_symbol": null,
+      "payment_method": "bank_transfer",
+      "complete_upon_execution": false,
+      "repeat_start": null,
+      "repeat_interval": null,
+      "next_repeat_time": null,
+      "text": null,
+      "note": null,
+      "items": [
+        {
+          "id": 2819421,
+          "created_at": "2026-04-23T17:43:47+02:00",
+          "updated_at": "2026-04-23T17:46:44+02:00",
+          "creator": {
+            "user_id": "jac"
+          },
+          "modifier": {
+            "user_id": "jac"
+          },
+          "batch": null,
+          "expiration_date": null,
+          "external_id": null,
+          "status": "valid",
+          "order": {
+            "order_id": 2025000004
+          },
+          "product": {
+            "product_id": "marketing"
+          },
+          "quantity": "1.0",
+          "description": "Marketingové poradenství",
+          "serial_numbers": null,
+          "unit_price": "1000.0"
+        }
+      ]
+    }
+  ]
+}

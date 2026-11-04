@@ -5,7 +5,7 @@ import type {
   StandardSchemaWithJSON,
   ToolAnnotations,
 } from '@modelcontextprotocol/server';
-import type { z } from 'zod';
+import { type z, z as zod } from 'zod';
 import { type AppConfig, ConfigError, SETUP_HINT } from '../config.js';
 import { ContactNames } from '../domain/contact-names.js';
 import { UnpaidReceivables } from '../domain/receivables.js';
@@ -32,8 +32,12 @@ export class UolSession {
 
 export interface ToolContext {
   config: AppConfig;
-  /** Throws [ConfigError] when the server runs without usable credentials. */
-  session(): UolSession;
+  /**
+   * The session for [account] (UOL_PROFILES_FILE), or for the only / default
+   * tenant when omitted. Throws [ConfigError] when the server runs without
+   * usable credentials and [InputError] for an unknown account.
+   */
+  session(account?: string): UolSession;
   now(): Date;
 }
 
@@ -82,11 +86,24 @@ export function registerTool<I extends z.ZodObject, O extends z.ZodObject>(
   annotations: Omit<ToolAnnotations, 'title'>,
   run: (args: z.output<I>, session: UolSession) => Promise<ToolOutput<z.output<O>>>,
 ): void {
-  // The SDK has already validated [args] against def.input; TypeScript just can't
-  // follow the schema → type inference through this generic wrapper.
+  // With several accounts every tool takes `account`; the wrapper picks the session.
+  const accounts = ctx.config.accounts ?? [];
+  const input =
+    accounts.length > 1
+      ? def.input.extend({
+          account: zod
+            .enum(accounts.map((a) => a.name) as [string, ...string[]])
+            .optional()
+            .describe(`Which UOL account (list_accounts); default "${ctx.config.defaultAccount}"`),
+        })
+      : def.input;
+
+  // The SDK has already validated [args] against the input schema; TypeScript just
+  // can't follow the schema → type inference through this generic wrapper.
   const handler = async (args: unknown): Promise<CallToolResult> => {
     try {
-      const { data, extra } = await run(args as z.output<I>, ctx.session());
+      const account = (args as { account?: string }).account;
+      const { data, extra } = await run(args as z.output<I>, ctx.session(account));
       return {
         content: [{ type: 'text', text: JSON.stringify(data) }, ...(extra ?? [])],
         structuredContent: data as Record<string, unknown>,
@@ -100,7 +117,7 @@ export function registerTool<I extends z.ZodObject, O extends z.ZodObject>(
     {
       title: def.title,
       description: def.description,
-      inputSchema: def.input as StandardSchemaWithJSON,
+      inputSchema: input as StandardSchemaWithJSON,
       outputSchema: def.output as StandardSchemaWithJSON,
       annotations: { title: def.title, ...annotations },
     },

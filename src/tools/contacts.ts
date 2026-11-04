@@ -1,11 +1,11 @@
 import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
 import type { RawAddress, RawContact } from '../uol/client.js';
-import { pageInfo, refId, str } from '../uol/normalize.js';
+import { bool, pageInfo, refId, str } from '../uol/normalize.js';
 import { type ToolContext, registerReadTool } from './context.js';
 import { limitArg, pageArg, pageInfo as pageInfoSchema } from './schemas.js';
 
-const contactRow = z.object({
+export const contactRow = z.object({
   contact_id: z.string().describe('Usable with get_contact and as buyer_id / seller_id / customer_id filters'),
   name: z.string().nullable(),
   company_number: z.string().nullable().describe('IČO'),
@@ -36,7 +36,7 @@ function primaryAddress(contact: RawContact): RawAddress | undefined {
   return addresses.find((a) => a.address_types?.includes('accounting')) ?? addresses[0];
 }
 
-function rowOf(contact: RawContact): z.output<typeof contactRow> {
+export function contactRowOf(contact: RawContact): z.output<typeof contactRow> {
   const primary = primaryAddress(contact);
   return {
     contact_id: contact.contact_id ?? '',
@@ -46,10 +46,10 @@ function rowOf(contact: RawContact): z.output<typeof contactRow> {
     country: str(contact.country_id),
     city: str(primary?.city),
     email: str(primary?.email),
-    taxable_person: contact.taxable_person ?? null,
-    vat_payer: contact.vat_payer ?? null,
-    unreliable_payer: contact.unreliable_payer ?? null,
-    hidden: contact.hidden ?? null,
+    taxable_person: bool(contact.taxable_person),
+    vat_payer: bool(contact.vat_payer),
+    unreliable_payer: bool(contact.unreliable_payer),
+    hidden: bool(contact.hidden),
   };
 }
 
@@ -104,7 +104,7 @@ export function registerContactTools(server: McpServer, ctx: ToolContext): void 
       });
       const raws = body.items ?? [];
       raws.forEach((c) => contacts.remember(c));
-      return { data: { contacts: raws.map(rowOf), pagination: pageInfo(body, args.page, args.limit) } };
+      return { data: { contacts: raws.map(contactRowOf), pagination: pageInfo(body, args.page, args.limit) } };
     },
   );
 
@@ -136,7 +136,7 @@ export function registerContactTools(server: McpServer, ctx: ToolContext): void 
       contacts.remember(raw);
       return {
         data: {
-          ...rowOf(raw),
+          ...contactRowOf(raw),
           note: str(raw.note),
           external_id: str(raw.external_id),
           days_till_due_date: raw.days_till_due_date ?? null,

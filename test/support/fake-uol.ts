@@ -143,7 +143,10 @@ export function fakeUolFetch(): { fetch: typeof fetch; requests: RecordedRequest
         }
         if (!id && q.get('idempotency_key') === TAKEN_IDEMPOTENCY_KEY) return json({ items: [detail] });
         if (!id) return json(singlePage('sales_invoices'));
-        if (id === DRAFT_INVOICE_ID) return json(method === 'PATCH' ? { ...draft, ...patchedFields(body) } : draft);
+        if (id === DRAFT_INVOICE_ID) {
+          if (method === 'DELETE') return new Response(null, { status: 204 });
+          return json(method === 'PATCH' ? { ...draft, ...patchedFields(body) } : draft);
+        }
         if (id !== String(detail.invoice_id)) return notFound();
         if (method === 'PATCH') return json(fixture('err_404_sales_invoice'), 403);
         if (accept === 'application/pdf') {
@@ -157,10 +160,48 @@ export function fakeUolFetch(): { fetch: typeof fetch; requests: RecordedRequest
         return json(detail);
       }
       case 'purchase_invoices': {
-        if (!id) return json(singlePage('purchase_invoices'));
         const detail = fixture<Item>('purchase_invoice_detail');
+        if (!id && method === 'POST') {
+          if (body.idempotency_key === TAKEN_IDEMPOTENCY_KEY) {
+            return json(
+              { message: 'Validation failed', errors: [{ resource: 'PurchaseInvoice', field: 'idempotency_key', code: 'has already been taken' }] },
+              422,
+            );
+          }
+          return json(
+            {
+              ...detail,
+              invoice_id: 2026900003,
+              public_id: body.public_id,
+              status: body.confirmed === 'true' ? 'confirmed' : 'valid',
+              seller: { _meta: { href: `https://test.demo.uol.cz/api/v1/contacts/${body.seller_id}` } },
+              items: body.items,
+            },
+            201,
+          );
+        }
+        if (!id && q.get('idempotency_key') === TAKEN_IDEMPOTENCY_KEY) return json({ items: [detail] });
+        if (!id) return json(singlePage('purchase_invoices'));
         return id === String(detail.invoice_id) ? json(detail) : notFound();
       }
+      case 'demands_for_payment':
+        return json({ reminder_id: 'U2026000001', status: body.status, items: body.items }, 201);
+      case 'repairs':
+        return json({ document_id: body.document_id, method: body.method ?? 'cancel' }, 201);
+      case 'bank_movements':
+        return method === 'POST' ? json({ gid: 1, ...body }, 201) : json(singlePage('bank_movements'));
+      case 'petty_cash_incomes':
+      case 'petty_cash_disburstments':
+      case 'sales_orders':
+      case 'purchase_orders':
+        return json(singlePage(resource));
+      case 'products': {
+        if (!id) return json(singlePage('products'));
+        const product = fixture<Body>('products').items?.find((p) => p.product_id === id);
+        return product ? json(product) : notFound();
+      }
+      case 'warehouse':
+        return id === 'statuses' ? json(singlePage('warehouse_statuses')) : notFound();
       case 'receivables': {
         const state = q.get('state');
         const contact = q.get('contact_id');
@@ -179,9 +220,16 @@ export function fakeUolFetch(): { fetch: typeof fetch; requests: RecordedRequest
         );
       }
       case 'contacts': {
-        if (!id) return json(singlePage('contacts'));
+        if (!id && method === 'POST') {
+          return json({ contact_id: body.contact_id ?? 'novy_kontakt', status: 'valid', ...body }, 201);
+        }
+        if (!id) {
+          const ico = q.get('company_number');
+          return json(singlePage('contacts', (c) => !ico || c.company_number === ico));
+        }
+        if (id.startsWith('missing')) return notFound();
         const detail = fixture<Item>('contact_detail');
-        if (id === detail.contact_id) return json(detail);
+        if (id === detail.contact_id) return json(method === 'PATCH' ? { ...detail, ...body } : detail);
         const listed = fixture<Body>('contacts').items?.find((c) => c.contact_id === id);
         return listed ? json(listed) : json({ contact_id: id, name: `Name of ${id}` });
       }
@@ -206,8 +254,22 @@ export function fakeUolFetch(): { fetch: typeof fetch; requests: RecordedRequest
           const docs = (fixture<Body>('uploaded_documents').items ?? []).filter((d) => !state || d.state === state);
           return json(paged(docs, q));
         }
+        if (sub === 'pairings' && method === 'POST') {
+          return json(
+            {
+              ...fixture<Item>('uploaded_document_pairings'),
+              document_pairings: [
+                { document_pairable_type: body.document_pairable_type, document_pairable_id: Number(body.document_pairable_id) },
+              ],
+            },
+            201,
+          );
+        }
         if (sub === 'pairings') return json(fixture('uploaded_document_pairings'));
+        if (sub === 'tags' && method === 'POST') return json({ id: 5, ...body }, 201);
+        if (sub === 'tags' && method === 'DELETE') return new Response(null, { status: 204 });
         if (sub === 'tags') return json(fixture('err_401'), 401);
+        if (method === 'PATCH') return json({ ...fixture<Item>('uploaded_document_detail'), state: body.state });
         if (sub === 'file') {
           return new Response(method === 'HEAD' ? null : Buffer.from('%PDF-1.4 doc'), {
             headers: {
@@ -223,8 +285,6 @@ export function fakeUolFetch(): { fetch: typeof fetch; requests: RecordedRequest
       case 'departments':
       case 'my_bank_accounts':
         return json(singlePage(resource));
-      case 'products':
-        return json({ items: [{ product_id: 'p1', name: 'Product 1', price: '100.0' }] });
       default:
         return notFound();
     }

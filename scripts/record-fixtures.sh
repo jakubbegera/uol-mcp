@@ -41,6 +41,13 @@ record departments             "/v1/departments?per_page=5"
 record my_bank_accounts        "/v1/my_bank_accounts"
 record uploaded_document_tags  "/v1/uploaded_document_tags"
 record err_404_sales_invoice   "/v1/sales_invoices/9999999999"
+record bank_movements          "/v1/bank_movements?per_page=3"
+record petty_cash_incomes      "/v1/petty_cash_incomes?per_page=3"
+record petty_cash_disburstments "/v1/petty_cash_disburstments?per_page=3"
+record products                "/v1/products?per_page=3"
+record warehouse_statuses      "/v1/warehouse/statuses?per_page=3"
+record sales_orders            "/v1/sales_orders?per_page=2"
+record purchase_orders         "/v1/purchase_orders?per_page=2"
 
 SI=$(first_id sales_invoices invoice_id)
 PI=$(first_id purchase_invoices invoice_id)

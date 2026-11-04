@@ -1,0 +1,117 @@
+{
+  "_meta": {
+    "href": "https://test.demo.uol.cz/api/v1/products",
+    "pagination": {
+      "first": "https://test.demo.uol.cz/api/v1/products?page=1&per_page=3",
+      "last": "https://test.demo.uol.cz/api/v1/products?page=25&per_page=3",
+      "next": "https://test.demo.uol.cz/api/v1/products?page=2&per_page=3"
+    }
+  },
+  "items": [
+    {
+      "_meta": {
+        "href": "https://test.demo.uol.cz/api/v1/products/konzultace"
+      },
+      "created_at": "2017-08-04T15:51:26+02:00",
+      "updated_at": "2017-08-04T15:51:26+02:00",
+      "creator": {
+        "user_id": "prosteckyo"
+      },
+      "modifier": {
+        "user_id": "prosteckyo"
+      },
+      "barcode": null,
+      "deferred_period_in_months": null,
+      "description": null,
+      "dimensions": null,
+      "external_id": null,
+      "group_id": null,
+      "intrastat_id": null,
+      "status": "valid",
+      "hidden": false,
+      "category_id": "sluzba",
+      "name": "konzultace",
+      "product_id": "konzultace",
+      "purchase_price": null,
+      "track_serial_numbers": false,
+      "reverse_charge_code": null,
+      "unit_id": "j",
+      "vat_code": "Z",
+      "weight_gross": null,
+      "weight_net": null,
+      "weight_unit_id": null,
+      "allow_vat_change": false,
+      "moss_code": null
+    },
+    {
+      "_meta": {
+        "href": "https://test.demo.uol.cz/api/v1/products/obraz-stredni"
+      },
+      "created_at": "2014-10-21T13:49:36+02:00",
+      "updated_at": "2015-05-18T11:07:56+02:00",
+      "creator": {
+        "user_id": "jakes"
+      },
+      "modifier": {
+        "user_id": "vanzura"
+      },
+      "barcode": null,
+      "deferred_period_in_months": null,
+      "description": null,
+      "dimensions": null,
+      "external_id": null,
+      "group_id": null,
+      "intrastat_id": null,
+      "status": "valid",
+      "hidden": false,
+      "category_id": "tovar",
+      "name": "Střední obrázek",
+      "product_id": "obraz-stredni",
+      "purchase_price": null,
+      "track_serial_numbers": false,
+      "reverse_charge_code": null,
+      "unit_id": "j",
+      "vat_code": "Z",
+      "weight_gross": null,
+      "weight_net": null,
+      "weight_unit_id": null,
+      "allow_vat_change": false,
+      "moss_code": null
+    },
+    {
+      "_meta": {
+        "href": "https://test.demo.uol.cz/api/v1/products/obraz-maly"
+      },
+      "created_at": "2014-10-21T13:50:28+02:00",
+      "updated_at": "2015-05-18T11:07:59+02:00",
+      "creator": {
+        "user_id": "jakes"
+      },
+      "modifier": {
+        "user_id": "vanzura"
+      },
+      "barcode": null,
+      "deferred_period_in_months": null,
+      "description": null,
+      "dimensions": null,
+      "external_id": null,
+      "group_id": null,
+      "intrastat_id": null,
+      "status": "valid",
+      "hidden": false,
+      "category_id": "tovar",
+      "name": "Malý obrázek",
+      "product_id": "obraz-maly",
+      "purchase_price": null,
+      "track_serial_numbers": false,
+      "reverse_charge_code": null,
+      "unit_id": "j",
+      "vat_code": "Z",
+      "weight_gross": null,
+      "weight_net": null,
+      "weight_unit_id": null,
+      "allow_vat_change": false,
+      "moss_code": null
+    }
+  ]
+}

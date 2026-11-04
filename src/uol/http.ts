@@ -65,6 +65,27 @@ export class UolHttp {
     return readJson<T>(response, path);
   }
 
+  /**
+   * Any method with an optional JSON body; an empty answer (`204`) yields null.
+   * Backs DELETE calls and the generic api_request tool.
+   */
+  async request(method: string, path: string, body?: unknown): Promise<unknown> {
+    const response = await this.send(this.apiUrl(path), {
+      method,
+      accept: 'application/json',
+      ...(body === undefined
+        ? {}
+        : { contentType: 'application/json', body: JSON.stringify(stringifyBooleans(body)) }),
+    });
+    const text = await response.text();
+    if (text.trim() === '') return null;
+    try {
+      return JSON.parse(text);
+    } catch {
+      throw new UolApiError(`UOL returned a non-JSON body for ${path}.`, response.status, 'invalid_response');
+    }
+  }
+
   /** POST `multipart/form-data`; fetch sets the boundary. */
   async postForm<T>(path: string, form: FormData): Promise<T> {
     const response = await this.send(this.apiUrl(path), { method: 'POST', accept: 'application/json', body: form });
