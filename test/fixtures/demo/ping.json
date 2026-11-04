@@ -1,0 +1,6 @@
+{
+  "ping": "pong",
+  "_meta": {
+    "href": "https://test.demo.uol.cz/api/v1/ping"
+  }
+}

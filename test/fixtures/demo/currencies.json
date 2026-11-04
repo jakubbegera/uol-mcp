@@ -1,0 +1,107 @@
+{
+  "_meta": {
+    "href": "https://test.demo.uol.cz/api/v1/currencies",
+    "pagination": {
+      "first": "https://test.demo.uol.cz/api/v1/currencies?page=1&per_page=5",
+      "last": "https://test.demo.uol.cz/api/v1/currencies?page=31&per_page=5",
+      "next": "https://test.demo.uol.cz/api/v1/currencies?page=2&per_page=5"
+    }
+  },
+  "items": [
+    {
+      "_meta": {
+        "href": "https://test.demo.uol.cz/api/v1/currencies/AED"
+      },
+      "created_at": "2019-08-15T19:32:54+02:00",
+      "updated_at": "2026-02-11T09:49:44+01:00",
+      "creator": {
+        "user_id": "uoladm"
+      },
+      "modifier": {
+        "user_id": "gieckoval"
+      },
+      "alternative_currency_id": null,
+      "currency_id": "AED",
+      "external_id": null,
+      "status": "valid",
+      "name": "Dirham SAE",
+      "rounded_to": "0.01"
+    },
+    {
+      "_meta": {
+        "href": "https://test.demo.uol.cz/api/v1/currencies/AFN"
+      },
+      "created_at": "2019-08-15T19:32:54+02:00",
+      "updated_at": "2019-08-15T19:32:54+02:00",
+      "creator": {
+        "user_id": "uoladm"
+      },
+      "modifier": {
+        "user_id": "uoladm"
+      },
+      "alternative_currency_id": null,
+      "currency_id": "AFN",
+      "external_id": null,
+      "status": "valid",
+      "name": "Afghánský afghání",
+      "rounded_to": "0.01"
+    },
+    {
+      "_meta": {
+        "href": "https://test.demo.uol.cz/api/v1/currencies/ALL"
+      },
+      "created_at": "2019-08-15T19:32:54+02:00",
+      "updated_at": "2019-08-15T19:32:54+02:00",
+      "creator": {
+        "user_id": "uoladm"
+      },
+      "modifier": {
+        "user_id": "uoladm"
+      },
+      "alternative_currency_id": null,
+      "currency_id": "ALL",
+      "external_id": null,
+      "status": "valid",
+      "name": "Albánský lek",
+      "rounded_to": "0.01"
+    },
+    {
+      "_meta": {
+        "href": "https://test.demo.uol.cz/api/v1/currencies/AMD"
+      },
+      "created_at": "2019-08-15T19:32:54+02:00",
+      "updated_at": "2019-08-15T19:32:54+02:00",
+      "creator": {
+        "user_id": "uoladm"
+      },
+      "modifier": {
+        "user_id": "uoladm"
+      },
+      "alternative_currency_id": null,
+      "currency_id": "AMD",
+      "external_id": null,
+      "status": "valid",
+      "name": "Arménský dram",
+      "rounded_to": "0.01"
+    },
+    {
+      "_meta": {
+        "href": "https://test.demo.uol.cz/api/v1/currencies/ANG"
+      },
+      "created_at": "2019-08-15T19:32:54+02:00",
+      "updated_at": "2019-08-15T19:32:54+02:00",
+      "creator": {
+        "user_id": "uoladm"
+      },
+      "modifier": {
+        "user_id": "uoladm"
+      },
+      "alternative_currency_id": null,
+      "currency_id": "ANG",
+      "external_id": null,
+      "status": "valid",
+      "name": "Gulden Nizozemských Antil",
+      "rounded_to": "0.01"
+    }
+  ]
+}

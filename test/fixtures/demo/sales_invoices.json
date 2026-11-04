@@ -1,0 +1,634 @@
+{
+  "_meta": {
+    "href": "https://test.demo.uol.cz/api/v1/sales_invoices",
+    "pagination": {
+      "first": "https://test.demo.uol.cz/api/v1/sales_invoices?page=1&per_page=5",
+      "last": "https://test.demo.uol.cz/api/v1/sales_invoices?page=52&per_page=5",
+      "next": "https://test.demo.uol.cz/api/v1/sales_invoices?page=2&per_page=5"
+    }
+  },
+  "items": [
+    {
+      "_meta": {
+        "href": "https://test.demo.uol.cz/api/v1/sales_invoices/2026000044"
+      },
+      "accounting_address": {
+        "address_id": "testovaci_136-praha-ga"
+      },
+      "buyer_address": {
+        "address_id": null
+      },
+      "bank_account": {
+        "bank_account_id": "cs_czk"
+      },
+      "creator": {
+        "user_id": "demo"
+      },
+      "currency": {
+        "currency_id": "CZK"
+      },
+      "delivery_address": {
+        "address_id": null
+      },
+      "department": {
+        "department_id": "praha"
+      },
+      "document_recipient_address": {
+        "address_id": null
+      },
+      "linked_doc": null,
+      "logo": {
+        "url": null
+      },
+      "modifier": {
+        "user_id": "demo"
+      },
+      "order": {
+        "order_id": null
+      },
+      "contract": {
+        "contract_id": null
+      },
+      "shipper": {
+        "_meta": null
+      },
+      "buyer": {
+        "_meta": {
+          "href": "https://test.demo.uol.cz/api/v1/contacts/gatom_technicky_test_1"
+        }
+      },
+      "items": [
+        {
+          "creator": {
+            "user_id": "demo"
+          },
+          "delivery": {
+            "delivery_id": null
+          },
+          "department": {
+            "department_id": null
+          },
+          "modifier": {
+            "user_id": "demo"
+          },
+          "product": {
+            "product_id": "zaloha_fo"
+          },
+          "contract": {
+            "contract_id": null
+          },
+          "batch": null,
+          "created_at": "2026-11-04T12:50:08+01:00",
+          "description": "Záloha na sjednané služby dle nabídky TEST-GATOM-1090-136",
+          "expiration_date": null,
+          "external_id": null,
+          "id": 2825626,
+          "percent_discount": 0,
+          "quantity": "1.0",
+          "status": "valid",
+          "serial_numbers": null,
+          "supplier_code": null,
+          "unit_price": "121.0",
+          "unit_price_vat_inclusive": "121.0",
+          "updated_at": "2026-11-04T12:50:08+01:00",
+          "vat_rate": 0,
+          "vat_calculation_method": "from_above"
+        }
+      ],
+      "cancellation_date": null,
+      "constant_symbol": 308,
+      "consumption_country_id": "CZ",
+      "created_at": "2026-11-04T12:50:08+01:00",
+      "delivery_note": false,
+      "delivery_note_note": null,
+      "delivery_note_text": null,
+      "due_date": "2026-11-18",
+      "exchange_rate": 1,
+      "external_id": "gatom-1090-1-6826a87cbd24f04b",
+      "idempotency_key": "gatom-1090-1-6826a87cbd24f04b",
+      "invoice_id": 2026000044,
+      "gid": 2825625,
+      "issue_date": "2026-11-04",
+      "note": "GATOM: objednávka / nabídka TEST-GATOM-1090-136",
+      "payment_method": "bank_transfer",
+      "percent_discount": 0,
+      "public_id": "2026000044",
+      "rounding": "0.0",
+      "status": "confirmed",
+      "send_by_email": false,
+      "send_by_mail": false,
+      "shipping_method": null,
+      "specific_symbol": null,
+      "tax_payment_date": "2026-11-04",
+      "text": "Záloha k nabídce TEST-GATOM-1090-136",
+      "total_amount": "121.0",
+      "type": "proforma",
+      "updated_at": "2026-11-04T12:50:08+01:00",
+      "variable_symbol": 2026000044,
+      "vat1_amount": "0.0",
+      "vat2_amount": "0.0",
+      "vat3_amount": "0.0",
+      "vat_document": false
+    },
+    {
+      "_meta": {
+        "href": "https://test.demo.uol.cz/api/v1/sales_invoices/2026000043"
+      },
+      "accounting_address": {
+        "address_id": "praha_16_u_jankovky_78"
+      },
+      "buyer_address": {
+        "address_id": null
+      },
+      "bank_account": {
+        "bank_account_id": null
+      },
+      "creator": {
+        "user_id": "demo"
+      },
+      "currency": {
+        "currency_id": "CZK"
+      },
+      "delivery_address": {
+        "address_id": null
+      },
+      "department": {
+        "department_id": "praha"
+      },
+      "document_recipient_address": {
+        "address_id": null
+      },
+      "linked_doc": {
+        "_meta": {
+          "href": "https://test.demo.uol.cz/api/v1/sales_invoices/2026000042"
+        }
+      },
+      "logo": {
+        "url": null
+      },
+      "modifier": {
+        "user_id": "demo"
+      },
+      "order": {
+        "order_id": null
+      },
+      "contract": {
+        "contract_id": null
+      },
+      "shipper": {
+        "_meta": null
+      },
+      "buyer": {
+        "_meta": {
+          "href": "https://test.demo.uol.cz/api/v1/contacts/polysoft_sro"
+        }
+      },
+      "items": [
+        {
+          "creator": {
+            "user_id": "demo"
+          },
+          "delivery": {
+            "delivery_id": null
+          },
+          "department": {
+            "department_id": null
+          },
+          "modifier": {
+            "user_id": "demo"
+          },
+          "product": {
+            "product_id": "marketing"
+          },
+          "contract": {
+            "contract_id": null
+          },
+          "batch": null,
+          "created_at": "2026-11-04T11:14:06+01:00",
+          "description": "Marketingové poradenství",
+          "expiration_date": null,
+          "external_id": null,
+          "id": 2825616,
+          "percent_discount": 0,
+          "quantity": "1.0",
+          "status": "valid",
+          "serial_numbers": null,
+          "supplier_code": null,
+          "unit_price": "350.0",
+          "unit_price_vat_inclusive": "423.5",
+          "updated_at": "2026-11-04T11:14:06+01:00",
+          "vat_rate": 21,
+          "vat_calculation_method": "from_below"
+        }
+      ],
+      "cancellation_date": null,
+      "constant_symbol": 308,
+      "consumption_country_id": "CZ",
+      "created_at": "2026-11-04T11:14:06+01:00",
+      "delivery_note": false,
+      "delivery_note_note": null,
+      "delivery_note_text": null,
+      "due_date": "2026-11-18",
+      "exchange_rate": 1,
+      "external_id": null,
+      "idempotency_key": null,
+      "invoice_id": 2026000043,
+      "gid": 2825615,
+      "issue_date": "2026-11-04",
+      "note": null,
+      "payment_method": "offseting",
+      "percent_discount": 0,
+      "public_id": "2026000043",
+      "rounding": "0.0",
+      "status": "confirmed",
+      "send_by_email": false,
+      "send_by_mail": false,
+      "shipping_method": null,
+      "specific_symbol": 45274304,
+      "tax_payment_date": "2026-11-04",
+      "text": null,
+      "total_amount": "423.5",
+      "type": "corrective",
+      "updated_at": "2026-11-04T11:14:09+01:00",
+      "variable_symbol": 2026000043,
+      "vat1_amount": "73.5",
+      "vat2_amount": "0.0",
+      "vat3_amount": "0.0",
+      "vat_document": true
+    },
+    {
+      "_meta": {
+        "href": "https://test.demo.uol.cz/api/v1/sales_invoices/2026000042"
+      },
+      "accounting_address": {
+        "address_id": "praha_16_u_jankovky_78"
+      },
+      "buyer_address": {
+        "address_id": null
+      },
+      "bank_account": {
+        "bank_account_id": "cs_czk"
+      },
+      "creator": {
+        "user_id": "demo"
+      },
+      "currency": {
+        "currency_id": "CZK"
+      },
+      "delivery_address": {
+        "address_id": null
+      },
+      "department": {
+        "department_id": "praha"
+      },
+      "document_recipient_address": {
+        "address_id": null
+      },
+      "linked_doc": null,
+      "logo": {
+        "url": null
+      },
+      "modifier": {
+        "user_id": "demo"
+      },
+      "order": {
+        "order_id": null
+      },
+      "contract": {
+        "contract_id": null
+      },
+      "shipper": {
+        "_meta": null
+      },
+      "buyer": {
+        "_meta": {
+          "href": "https://test.demo.uol.cz/api/v1/contacts/polysoft_sro"
+        }
+      },
+      "items": [
+        {
+          "creator": {
+            "user_id": "demo"
+          },
+          "delivery": {
+            "delivery_id": null
+          },
+          "department": {
+            "department_id": null
+          },
+          "modifier": {
+            "user_id": "demo"
+          },
+          "product": {
+            "product_id": "marketing"
+          },
+          "contract": {
+            "contract_id": null
+          },
+          "batch": null,
+          "created_at": "2026-11-04T11:13:43+01:00",
+          "description": "Marketingové poradenství",
+          "expiration_date": null,
+          "external_id": null,
+          "id": 2825611,
+          "percent_discount": 0,
+          "quantity": "1.0",
+          "status": "valid",
+          "serial_numbers": null,
+          "supplier_code": null,
+          "unit_price": "350.0",
+          "unit_price_vat_inclusive": "423.5",
+          "updated_at": "2026-11-04T11:13:43+01:00",
+          "vat_rate": 21,
+          "vat_calculation_method": "from_below"
+        }
+      ],
+      "cancellation_date": null,
+      "constant_symbol": 308,
+      "consumption_country_id": "CZ",
+      "created_at": "2026-11-04T11:13:43+01:00",
+      "delivery_note": false,
+      "delivery_note_note": null,
+      "delivery_note_text": null,
+      "due_date": "2026-11-18",
+      "exchange_rate": 1,
+      "external_id": null,
+      "idempotency_key": null,
+      "invoice_id": 2026000042,
+      "gid": 2825610,
+      "issue_date": "2026-11-04",
+      "note": null,
+      "payment_method": "bank_transfer",
+      "percent_discount": 0,
+      "public_id": "2026000042",
+      "rounding": "0.0",
+      "status": "confirmed",
+      "send_by_email": false,
+      "send_by_mail": false,
+      "shipping_method": null,
+      "specific_symbol": 45274304,
+      "tax_payment_date": "2026-11-04",
+      "text": null,
+      "total_amount": "423.5",
+      "type": "standard",
+      "updated_at": "2026-11-04T11:13:46+01:00",
+      "variable_symbol": 2026000042,
+      "vat1_amount": "73.5",
+      "vat2_amount": "0.0",
+      "vat3_amount": "0.0",
+      "vat_document": true
+    },
+    {
+      "_meta": {
+        "href": "https://test.demo.uol.cz/api/v1/sales_invoices/2026000041"
+      },
+      "accounting_address": {
+        "address_id": "videnska_19-vestec"
+      },
+      "buyer_address": {
+        "address_id": null
+      },
+      "bank_account": {
+        "bank_account_id": "cs_czk"
+      },
+      "creator": {
+        "user_id": "demo"
+      },
+      "currency": {
+        "currency_id": "CZK"
+      },
+      "delivery_address": {
+        "address_id": null
+      },
+      "department": {
+        "department_id": "praha"
+      },
+      "document_recipient_address": {
+        "address_id": null
+      },
+      "linked_doc": {
+        "_meta": {
+          "href": "https://test.demo.uol.cz/api/v1/sales_invoices/2026000036"
+        }
+      },
+      "logo": {
+        "url": null
+      },
+      "modifier": {
+        "user_id": "demo"
+      },
+      "order": {
+        "order_id": null
+      },
+      "contract": {
+        "contract_id": null
+      },
+      "shipper": {
+        "_meta": null
+      },
+      "buyer": {
+        "_meta": {
+          "href": "https://test.demo.uol.cz/api/v1/contacts/bychl_auto_as"
+        }
+      },
+      "items": [
+        {
+          "creator": {
+            "user_id": "demo"
+          },
+          "delivery": {
+            "delivery_id": null
+          },
+          "department": {
+            "department_id": null
+          },
+          "modifier": {
+            "user_id": "demo"
+          },
+          "product": {
+            "product_id": "marketing"
+          },
+          "contract": {
+            "contract_id": null
+          },
+          "batch": null,
+          "created_at": "2026-11-04T11:07:30+01:00",
+          "description": "Marketingové poradenství",
+          "expiration_date": null,
+          "external_id": null,
+          "id": 2825605,
+          "percent_discount": 0,
+          "quantity": "1.0",
+          "status": "valid",
+          "serial_numbers": null,
+          "supplier_code": null,
+          "unit_price": "13000.0",
+          "unit_price_vat_inclusive": "15730.0",
+          "updated_at": "2026-11-04T11:07:30+01:00",
+          "vat_rate": 21,
+          "vat_calculation_method": "from_below"
+        }
+      ],
+      "cancellation_date": null,
+      "constant_symbol": 308,
+      "consumption_country_id": "CZ",
+      "created_at": "2026-11-04T11:07:30+01:00",
+      "delivery_note": false,
+      "delivery_note_note": null,
+      "delivery_note_text": null,
+      "due_date": "2026-11-18",
+      "exchange_rate": 1,
+      "external_id": null,
+      "idempotency_key": null,
+      "invoice_id": 2026000041,
+      "gid": 2825604,
+      "issue_date": "2026-11-04",
+      "note": null,
+      "payment_method": "bank_transfer",
+      "percent_discount": 50,
+      "public_id": "2026000041",
+      "rounding": "0.0",
+      "status": "confirmed",
+      "send_by_email": false,
+      "send_by_mail": false,
+      "shipping_method": "seller",
+      "specific_symbol": 1726773,
+      "tax_payment_date": "2026-11-04",
+      "text": "1<br>\n2<br>\n3",
+      "total_amount": "7865.0",
+      "type": "corrective",
+      "updated_at": "2026-11-04T11:07:33+01:00",
+      "variable_symbol": 2026000041,
+      "vat1_amount": "1365.0",
+      "vat2_amount": "0.0",
+      "vat3_amount": "0.0",
+      "vat_document": true
+    },
+    {
+      "_meta": {
+        "href": "https://test.demo.uol.cz/api/v1/sales_invoices/2026000040"
+      },
+      "accounting_address": {
+        "address_id": "praha_9_k_nahonu_988-1"
+      },
+      "buyer_address": {
+        "address_id": null
+      },
+      "bank_account": {
+        "bank_account_id": null
+      },
+      "creator": {
+        "user_id": "demo"
+      },
+      "currency": {
+        "currency_id": "CZK"
+      },
+      "delivery_address": {
+        "address_id": null
+      },
+      "department": {
+        "department_id": "praha"
+      },
+      "document_recipient_address": {
+        "address_id": null
+      },
+      "linked_doc": {
+        "_meta": {
+          "href": "https://test.demo.uol.cz/api/v1/sales_invoices/2026000039"
+        }
+      },
+      "logo": {
+        "url": null
+      },
+      "modifier": {
+        "user_id": "demo"
+      },
+      "order": {
+        "order_id": null
+      },
+      "contract": {
+        "contract_id": null
+      },
+      "shipper": {
+        "_meta": null
+      },
+      "buyer": {
+        "_meta": {
+          "href": "https://test.demo.uol.cz/api/v1/contacts/person_3"
+        }
+      },
+      "items": [
+        {
+          "creator": {
+            "user_id": "demo"
+          },
+          "delivery": {
+            "delivery_id": null
+          },
+          "department": {
+            "department_id": null
+          },
+          "modifier": {
+            "user_id": "demo"
+          },
+          "product": {
+            "product_id": "ostatni_sluzby"
+          },
+          "contract": {
+            "contract_id": null
+          },
+          "batch": null,
+          "created_at": "2026-11-04T11:05:47+01:00",
+          "description": "Ostatní služby",
+          "expiration_date": null,
+          "external_id": null,
+          "id": 2825600,
+          "percent_discount": 0,
+          "quantity": "1.0",
+          "status": "valid",
+          "serial_numbers": null,
+          "supplier_code": null,
+          "unit_price": "5465.0",
+          "unit_price_vat_inclusive": "6612.65",
+          "updated_at": "2026-11-04T11:05:47+01:00",
+          "vat_rate": 21,
+          "vat_calculation_method": "from_below"
+        }
+      ],
+      "cancellation_date": null,
+      "constant_symbol": 308,
+      "consumption_country_id": "CZ",
+      "created_at": "2026-11-04T11:05:47+01:00",
+      "delivery_note": false,
+      "delivery_note_note": null,
+      "delivery_note_text": null,
+      "due_date": "2026-11-18",
+      "exchange_rate": 1,
+      "external_id": null,
+      "idempotency_key": null,
+      "invoice_id": 2026000040,
+      "gid": 2825599,
+      "issue_date": "2026-11-04",
+      "note": null,
+      "payment_method": "offseting",
+      "percent_discount": 0,
+      "public_id": "2026000040",
+      "rounding": "0.0",
+      "status": "confirmed",
+      "send_by_email": false,
+      "send_by_mail": false,
+      "shipping_method": null,
+      "specific_symbol": null,
+      "tax_payment_date": "2026-11-04",
+      "text": null,
+      "total_amount": "6612.65",
+      "type": "corrective",
+      "updated_at": "2026-11-04T11:05:50+01:00",
+      "variable_symbol": 2026000040,
+      "vat1_amount": "1147.65",
+      "vat2_amount": "0.0",
+      "vat3_amount": "0.0",
+      "vat_document": true
+    }
+  ]
+}

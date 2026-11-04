@@ -1,0 +1,81 @@
+{
+  "_meta": {
+    "href": "https://test.demo.uol.cz/api/v1/countries",
+    "pagination": {
+      "first": "https://test.demo.uol.cz/api/v1/countries?page=1&per_page=3",
+      "last": "https://test.demo.uol.cz/api/v1/countries?page=84&per_page=3",
+      "next": "https://test.demo.uol.cz/api/v1/countries?page=2&per_page=3"
+    }
+  },
+  "items": [
+    {
+      "_meta": {
+        "href": "https://test.demo.uol.cz/api/v1/countries/AQ"
+      },
+      "created_at": "2009-02-03T14:46:50+01:00",
+      "updated_at": "2009-02-03T14:47:06+01:00",
+      "creator": {
+        "user_id": "uoladm"
+      },
+      "modifier": {
+        "user_id": "uoladm"
+      },
+      "country_id": "AQ",
+      "currency_id": null,
+      "eu_entry_date": null,
+      "external_id": null,
+      "international_name": "Antarctica",
+      "status": "valid",
+      "name": "Antarktida",
+      "phone_prefix": null,
+      "vatin_regex": null,
+      "postal_code_regex": null
+    },
+    {
+      "_meta": {
+        "href": "https://test.demo.uol.cz/api/v1/countries/BV"
+      },
+      "created_at": "2009-02-03T14:46:50+01:00",
+      "updated_at": "2009-02-03T14:47:06+01:00",
+      "creator": {
+        "user_id": "uoladm"
+      },
+      "modifier": {
+        "user_id": "uoladm"
+      },
+      "country_id": "BV",
+      "currency_id": null,
+      "eu_entry_date": null,
+      "external_id": null,
+      "international_name": "Bouvet Island",
+      "status": "valid",
+      "name": "Bouvetův ostrov",
+      "phone_prefix": null,
+      "vatin_regex": null,
+      "postal_code_regex": null
+    },
+    {
+      "_meta": {
+        "href": "https://test.demo.uol.cz/api/v1/countries/TF"
+      },
+      "created_at": "2009-02-03T14:46:51+01:00",
+      "updated_at": "2009-02-03T14:47:06+01:00",
+      "creator": {
+        "user_id": "uoladm"
+      },
+      "modifier": {
+        "user_id": "uoladm"
+      },
+      "country_id": "TF",
+      "currency_id": null,
+      "eu_entry_date": null,
+      "external_id": null,
+      "international_name": "French Southern Territories",
+      "status": "valid",
+      "name": "Francouzská jižní a antarktická území",
+      "phone_prefix": null,
+      "vatin_regex": null,
+      "postal_code_regex": null
+    }
+  ]
+}

@@ -1,0 +1,100 @@
+{
+  "_meta": {
+    "href": "https://test.demo.uol.cz/api/v1/purchase_invoices/2014000001"
+  },
+  "created_at": "2014-10-03T13:49:50+02:00",
+  "updated_at": "2014-10-03T14:13:56+02:00",
+  "creator": {
+    "user_id": "jakes"
+  },
+  "modifier": {
+    "user_id": "jakes"
+  },
+  "seller": {
+    "_meta": {
+      "href": "https://test.demo.uol.cz/api/v1/contacts/alzacz_as"
+    }
+  },
+  "currency": {
+    "currency_id": "CZK"
+  },
+  "department": {
+    "department_id": "sidlo"
+  },
+  "order": {
+    "order_id": null
+  },
+  "contract": {
+    "contract_id": null
+  },
+  "items": [
+    {
+      "created_at": "2014-10-03T13:50:08+02:00",
+      "updated_at": "2014-10-03T13:50:08+02:00",
+      "creator": {
+        "user_id": "jakes"
+      },
+      "modifier": {
+        "user_id": "jakes"
+      },
+      "department": {
+        "department_id": null
+      },
+      "product": {
+        "product_id": "drmaj"
+      },
+      "contract": {
+        "contract_id": null
+      },
+      "expiration_date": null,
+      "batch": null,
+      "reduce_vat_deduction": false,
+      "percent_discount": 0,
+      "external_id": null,
+      "invoice_id": 2014000001,
+      "status": "valid",
+      "description": "Drobný majetek",
+      "external_product_id": null,
+      "quantity": "1.0",
+      "serial_numbers": null,
+      "supplier_code": null,
+      "total_price": "1000.0",
+      "vat_rate": 21
+    }
+  ],
+  "date_of_receipt": "2014-09-23",
+  "due_date": "2014-09-20",
+  "issue_date": "2014-09-20",
+  "tax_payment_date": "2014-09-20",
+  "bank_code": null,
+  "bank_country_id": null,
+  "account_number": null,
+  "reduce_vat_deduction": false,
+  "constant_symbol": 308,
+  "percent_discount": 0,
+  "external_id": null,
+  "idempotency_key": null,
+  "iban": null,
+  "invoice_id": 2014000001,
+  "gid": 64919,
+  "status": "confirmed",
+  "isdoc": null,
+  "note": "paměťová karta",
+  "payment_method": "cash",
+  "exchange_rate": 1,
+  "rounding": "0.0",
+  "shipper": {
+    "_meta": null
+  },
+  "shipping_method": null,
+  "specific_symbol": null,
+  "total_amount": "1210.0",
+  "type": "standard",
+  "vat_document": true,
+  "vat1_amount": "210.0",
+  "vat2_amount": "0.0",
+  "vat3_amount": null,
+  "variable_symbol": 2414128746,
+  "public_id": "2414128746",
+  "linked_doc_number": null
+}

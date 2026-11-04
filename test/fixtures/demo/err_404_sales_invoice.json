@@ -1,0 +1,6 @@
+{
+  "status": "404",
+  "code": "0004",
+  "message": "Record doesn't exist.",
+  "developerMessage": "Record doesn't exist, make sure that you're requesting correct object"
+}

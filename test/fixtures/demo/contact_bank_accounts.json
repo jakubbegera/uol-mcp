@@ -1,0 +1,42 @@
+{
+  "_meta": {
+    "href": "https://test.demo.uol.cz/api/v1/contact_bank_accounts",
+    "pagination": {
+      "first": "https://test.demo.uol.cz/api/v1/contact_bank_accounts?contact=active_24_sro&page=1",
+      "last": "https://test.demo.uol.cz/api/v1/contact_bank_accounts?contact=active_24_sro&page=1"
+    }
+  },
+  "items": [
+    {
+      "_meta": {
+        "href": "https://test.demo.uol.cz/api/v1/contact_bank_accounts/75748"
+      },
+      "bank_account_id": 75748,
+      "created_at": "2020-03-11T14:37:52+01:00",
+      "updated_at": "2020-03-11T14:37:52+01:00",
+      "creator": {
+        "user_id": "sheshnevan"
+      },
+      "modifier": {
+        "user_id": "sheshnevan"
+      },
+      "bank_account": "34175028/5500",
+      "bank_code": "5500",
+      "contact": {
+        "contact_id": "active_24_sro"
+      },
+      "country": {
+        "country_id": "CZ"
+      },
+      "currency": {
+        "currency_id": null
+      },
+      "external_id": null,
+      "iban": "CZ6155000000000034175028",
+      "default": true,
+      "status": "valid",
+      "name": null,
+      "published": true
+    }
+  ]
+}

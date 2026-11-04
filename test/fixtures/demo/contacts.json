@@ -1,0 +1,500 @@
+{
+  "_meta": {
+    "href": "https://test.demo.uol.cz/api/v1/contacts",
+    "pagination": {
+      "first": "https://test.demo.uol.cz/api/v1/contacts?page=1&per_page=5",
+      "last": "https://test.demo.uol.cz/api/v1/contacts?page=46&per_page=5",
+      "next": "https://test.demo.uol.cz/api/v1/contacts?page=2&per_page=5"
+    }
+  },
+  "items": [
+    {
+      "_meta": {
+        "href": "https://test.demo.uol.cz/api/v1/contacts/active_24_sro"
+      },
+      "creator": {
+        "user_id": "sheshnevan"
+      },
+      "modifier": {
+        "user_id": "vallo"
+      },
+      "contract": {
+        "contract_id": null
+      },
+      "acquisition_country_id": null,
+      "business_entity": true,
+      "company_number": "25115804",
+      "contact_id": "active_24_sro",
+      "consumption_country_id": null,
+      "country_id": "CZ",
+      "created_at": "2020-03-11T14:37:34.357+01:00",
+      "days_till_due_date": null,
+      "department_id": null,
+      "duplicate_variable_symbol": false,
+      "external_id": null,
+      "hidden": false,
+      "import_received_documents": "P",
+      "language_id": null,
+      "name": "ACTIVE 24, s.r.o.",
+      "note": null,
+      "percent_discount": 0,
+      "received_invoice_public_id_setting": "unique",
+      "received_invoice_variable_symbol_setting": "uniq_and_other_from_no",
+      "status": "valid",
+      "sipo_number": null,
+      "specific_symbol": 25115804,
+      "taxable_person": true,
+      "tin": null,
+      "unreliable_payer": false,
+      "updated_at": "2026-07-20T12:03:16.710+02:00",
+      "vat_payer": false,
+      "vatin": "CZ25115804",
+      "addresses": [
+        {
+          "creator": {
+            "user_id": "sheshnevan"
+          },
+          "modifier": {
+            "user_id": "sheshnevan"
+          },
+          "address_id": "praha_8_sokolovska_394",
+          "address_types": [
+            "accounting"
+          ],
+          "building_number": null,
+          "city": "Praha 8",
+          "country_id": "CZ",
+          "created_at": "2020-03-11T14:37:34+01:00",
+          "email": null,
+          "external_id": null,
+          "hidden": false,
+          "mobile_phone": null,
+          "name": "ACTIVE 24, s.r.o.",
+          "phone": null,
+          "postal_code": "186 00",
+          "status": "valid",
+          "street": "Sokolovská 394/17",
+          "updated_at": "2020-03-11T14:37:34+01:00",
+          "url": null
+        }
+      ],
+      "bank_accounts": [
+        {
+          "_meta": {
+            "href": "https://test.demo.uol.cz/api/v1/contact_bank_accounts/75748"
+          },
+          "bank_account_id": 75748,
+          "created_at": "2020-03-11T14:37:52+01:00",
+          "updated_at": "2020-03-11T14:37:52+01:00",
+          "creator": {
+            "user_id": "sheshnevan"
+          },
+          "modifier": {
+            "user_id": "sheshnevan"
+          },
+          "bank_account": "34175028/5500",
+          "bank_code": "5500",
+          "contact": {
+            "contact_id": "active_24_sro"
+          },
+          "country": {
+            "country_id": "CZ"
+          },
+          "currency": {
+            "currency_id": null
+          },
+          "external_id": null,
+          "iban": "CZ6155000000000034175028",
+          "default": true,
+          "status": "valid",
+          "name": null,
+          "published": true
+        }
+      ]
+    },
+    {
+      "_meta": {
+        "href": "https://test.demo.uol.cz/api/v1/contacts/person_1"
+      },
+      "creator": {
+        "user_id": "orszaghovad"
+      },
+      "modifier": {
+        "user_id": "sevcikm"
+      },
+      "contract": {
+        "contract_id": null
+      },
+      "acquisition_country_id": null,
+      "business_entity": true,
+      "company_number": null,
+      "contact_id": "person_1",
+      "consumption_country_id": null,
+      "country_id": "CZ",
+      "created_at": "2025-10-17T12:24:20.776+02:00",
+      "days_till_due_date": 10,
+      "department_id": null,
+      "duplicate_variable_symbol": false,
+      "external_id": null,
+      "hidden": false,
+      "import_received_documents": "P",
+      "language_id": null,
+      "name": "Person 1",
+      "note": null,
+      "percent_discount": 0,
+      "received_invoice_public_id_setting": "unique",
+      "received_invoice_variable_symbol_setting": "same_as_no",
+      "status": "valid",
+      "sipo_number": null,
+      "specific_symbol": null,
+      "taxable_person": true,
+      "tin": null,
+      "unreliable_payer": false,
+      "updated_at": "2026-06-26T13:45:57.256+02:00",
+      "vat_payer": false,
+      "vatin": null,
+      "addresses": [
+        {
+          "creator": {
+            "user_id": "orszaghovad"
+          },
+          "modifier": {
+            "user_id": "orszaghovad"
+          },
+          "address_id": "person_1_address_1",
+          "address_types": [
+            "accounting"
+          ],
+          "building_number": null,
+          "city": "Testov",
+          "country_id": "CZ",
+          "created_at": "2025-10-17T12:24:20+02:00",
+          "email": null,
+          "external_id": null,
+          "hidden": false,
+          "mobile_phone": null,
+          "name": "Person 1",
+          "phone": null,
+          "postal_code": "000 00",
+          "status": "valid",
+          "street": "Testovací 1",
+          "updated_at": "2025-10-17T12:24:20+02:00",
+          "url": null
+        }
+      ],
+      "bank_accounts": [
+        {
+          "_meta": {
+            "href": "https://test.demo.uol.cz/api/v1/contact_bank_accounts/2769270"
+          },
+          "bank_account_id": 2769270,
+          "created_at": "2025-10-17T12:24:41+02:00",
+          "updated_at": "2025-10-17T12:24:41+02:00",
+          "creator": {
+            "user_id": "orszaghovad"
+          },
+          "modifier": {
+            "user_id": "orszaghovad"
+          },
+          "bank_account": "0000000000/0000",
+          "bank_code": "0800",
+          "contact": {
+            "contact_id": "person_1"
+          },
+          "country": {
+            "country_id": "CZ"
+          },
+          "currency": {
+            "currency_id": null
+          },
+          "external_id": null,
+          "iban": "CZ0000000000000000000000",
+          "default": true,
+          "status": "valid",
+          "name": null,
+          "published": false
+        }
+      ]
+    },
+    {
+      "_meta": {
+        "href": "https://test.demo.uol.cz/api/v1/contacts/agentura_xact_sro"
+      },
+      "creator": {
+        "user_id": "sheshnevan"
+      },
+      "modifier": {
+        "user_id": "jac"
+      },
+      "contract": {
+        "contract_id": null
+      },
+      "acquisition_country_id": null,
+      "business_entity": true,
+      "company_number": "27084761",
+      "contact_id": "agentura_xact_sro",
+      "consumption_country_id": null,
+      "country_id": "CZ",
+      "created_at": "2020-03-12T11:30:24.174+01:00",
+      "days_till_due_date": null,
+      "department_id": null,
+      "duplicate_variable_symbol": false,
+      "external_id": null,
+      "hidden": false,
+      "import_received_documents": "P",
+      "language_id": null,
+      "name": "Agentura Xact s.r.o.",
+      "note": "tajná\n\npoznámka\n..\n<br>\nnení řádek",
+      "percent_discount": 0,
+      "received_invoice_public_id_setting": "unique",
+      "received_invoice_variable_symbol_setting": "same_as_no",
+      "status": "valid",
+      "sipo_number": null,
+      "specific_symbol": 27084761,
+      "taxable_person": true,
+      "tin": null,
+      "unreliable_payer": false,
+      "updated_at": "2025-11-14T10:57:29.905+01:00",
+      "vat_payer": true,
+      "vatin": "CZ27084761",
+      "addresses": [
+        {
+          "creator": {
+            "user_id": "sheshnevan"
+          },
+          "modifier": {
+            "user_id": "sheshnevan"
+          },
+          "address_id": "praha_10_ruska_473-8",
+          "address_types": [
+            "accounting"
+          ],
+          "building_number": null,
+          "city": "Praha 10",
+          "country_id": "CZ",
+          "created_at": "2020-03-12T11:30:24+01:00",
+          "email": null,
+          "external_id": null,
+          "hidden": false,
+          "mobile_phone": null,
+          "name": "Agentura Xact s.r.o.",
+          "phone": null,
+          "postal_code": "101 00",
+          "status": "valid",
+          "street": "Ruská 473/8",
+          "updated_at": "2020-03-12T11:30:24+01:00",
+          "url": null
+        }
+      ],
+      "bank_accounts": [
+        {
+          "_meta": {
+            "href": "https://test.demo.uol.cz/api/v1/contact_bank_accounts/76067"
+          },
+          "bank_account_id": 76067,
+          "created_at": "2020-03-12T11:30:42+01:00",
+          "updated_at": "2020-03-12T11:30:42+01:00",
+          "creator": {
+            "user_id": "sheshnevan"
+          },
+          "modifier": {
+            "user_id": "sheshnevan"
+          },
+          "bank_account": "185271041/0300",
+          "bank_code": "0300",
+          "contact": {
+            "contact_id": "agentura_xact_sro"
+          },
+          "country": {
+            "country_id": "CZ"
+          },
+          "currency": {
+            "currency_id": null
+          },
+          "external_id": null,
+          "iban": "CZ7103000000000185271041",
+          "default": true,
+          "status": "valid",
+          "name": null,
+          "published": true
+        }
+      ]
+    },
+    {
+      "_meta": {
+        "href": "https://test.demo.uol.cz/api/v1/contacts/almeco_sro"
+      },
+      "creator": {
+        "user_id": "malarovaa"
+      },
+      "modifier": {
+        "user_id": "malarovaa"
+      },
+      "contract": {
+        "contract_id": null
+      },
+      "acquisition_country_id": null,
+      "business_entity": true,
+      "company_number": "25733346",
+      "contact_id": "almeco_sro",
+      "consumption_country_id": null,
+      "country_id": "CZ",
+      "created_at": "2025-10-07T14:29:22.640+02:00",
+      "days_till_due_date": null,
+      "department_id": null,
+      "duplicate_variable_symbol": false,
+      "external_id": null,
+      "hidden": false,
+      "import_received_documents": "P",
+      "language_id": null,
+      "name": "Almeco, s.r.o.",
+      "note": null,
+      "percent_discount": 0,
+      "received_invoice_public_id_setting": "unique",
+      "received_invoice_variable_symbol_setting": "same_as_no",
+      "status": "valid",
+      "sipo_number": null,
+      "specific_symbol": null,
+      "taxable_person": true,
+      "tin": null,
+      "unreliable_payer": false,
+      "updated_at": "2025-10-07T14:29:22.640+02:00",
+      "vat_payer": true,
+      "vatin": "CZ25733346",
+      "addresses": [
+        {
+          "creator": {
+            "user_id": "malarovaa"
+          },
+          "modifier": {
+            "user_id": "malarovaa"
+          },
+          "address_id": "uvaly_skvorecka_1803",
+          "address_types": [
+            "accounting"
+          ],
+          "building_number": null,
+          "city": "Úvaly",
+          "country_id": "CZ",
+          "created_at": "2025-10-07T14:29:22+02:00",
+          "email": null,
+          "external_id": null,
+          "hidden": false,
+          "mobile_phone": null,
+          "name": "Almeco, s.r.o.",
+          "phone": null,
+          "postal_code": "250 82",
+          "status": "valid",
+          "street": "Škvorecká 1803",
+          "updated_at": "2025-10-07T14:29:22+02:00",
+          "url": null
+        }
+      ],
+      "bank_accounts": []
+    },
+    {
+      "_meta": {
+        "href": "https://test.demo.uol.cz/api/v1/contacts/alzacz_as"
+      },
+      "creator": {
+        "user_id": "jakes"
+      },
+      "modifier": {
+        "user_id": "bartunkovaa"
+      },
+      "contract": {
+        "contract_id": null
+      },
+      "acquisition_country_id": null,
+      "business_entity": true,
+      "company_number": "27082440",
+      "contact_id": "alzacz_as",
+      "consumption_country_id": null,
+      "country_id": "CZ",
+      "created_at": "2014-10-03T13:48:58.731+02:00",
+      "days_till_due_date": null,
+      "department_id": null,
+      "duplicate_variable_symbol": false,
+      "external_id": null,
+      "hidden": false,
+      "import_received_documents": "P",
+      "language_id": null,
+      "name": "Alza.cz a.s.",
+      "note": null,
+      "percent_discount": 0,
+      "received_invoice_public_id_setting": "unique",
+      "received_invoice_variable_symbol_setting": "unique",
+      "status": "valid",
+      "sipo_number": null,
+      "specific_symbol": 27082440,
+      "taxable_person": true,
+      "tin": null,
+      "unreliable_payer": false,
+      "updated_at": "2021-07-19T15:02:11.114+02:00",
+      "vat_payer": true,
+      "vatin": "CZ27082440",
+      "addresses": [
+        {
+          "creator": {
+            "user_id": "uoladm"
+          },
+          "modifier": {
+            "user_id": "sevcikm"
+          },
+          "address_id": "jatecni_1530-33-praha",
+          "address_types": [
+            "accounting"
+          ],
+          "building_number": null,
+          "city": "Praha 7",
+          "country_id": "CZ",
+          "created_at": "2015-03-11T11:31:11+01:00",
+          "email": null,
+          "external_id": null,
+          "hidden": false,
+          "mobile_phone": null,
+          "name": "Alza.cz a.s.",
+          "phone": null,
+          "postal_code": "170 00",
+          "status": "valid",
+          "street": "Jateční 1530/33",
+          "updated_at": "2026-01-30T10:32:54+01:00",
+          "url": null
+        }
+      ],
+      "bank_accounts": [
+        {
+          "_meta": {
+            "href": "https://test.demo.uol.cz/api/v1/contact_bank_accounts/2768486"
+          },
+          "bank_account_id": 2768486,
+          "created_at": "2025-10-07T14:21:18+02:00",
+          "updated_at": "2025-10-07T14:21:18+02:00",
+          "creator": {
+            "user_id": "malarovaa"
+          },
+          "modifier": {
+            "user_id": "malarovaa"
+          },
+          "bank_account": "1014977044/3030",
+          "bank_code": "3030",
+          "contact": {
+            "contact_id": "alzacz_as"
+          },
+          "country": {
+            "country_id": "CZ"
+          },
+          "currency": {
+            "currency_id": null
+          },
+          "external_id": null,
+          "iban": "CZ4930300000001014977044",
+          "default": true,
+          "status": "valid",
+          "name": null,
+          "published": false
+        }
+      ]
+    }
+  ]
+}

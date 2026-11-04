@@ -1,0 +1,104 @@
+{
+  "_meta": {
+    "href": "https://test.demo.uol.cz/api/v1/contacts/active_24_sro"
+  },
+  "creator": {
+    "user_id": "sheshnevan"
+  },
+  "modifier": {
+    "user_id": "vallo"
+  },
+  "contract": {
+    "contract_id": null
+  },
+  "acquisition_country_id": null,
+  "business_entity": true,
+  "company_number": "25115804",
+  "contact_id": "active_24_sro",
+  "consumption_country_id": null,
+  "country_id": "CZ",
+  "created_at": "2020-03-11T14:37:34.357+01:00",
+  "days_till_due_date": null,
+  "department_id": null,
+  "duplicate_variable_symbol": false,
+  "external_id": null,
+  "hidden": false,
+  "import_received_documents": "P",
+  "language_id": null,
+  "name": "ACTIVE 24, s.r.o.",
+  "note": null,
+  "percent_discount": 0,
+  "received_invoice_public_id_setting": "unique",
+  "received_invoice_variable_symbol_setting": "uniq_and_other_from_no",
+  "status": "valid",
+  "sipo_number": null,
+  "specific_symbol": 25115804,
+  "taxable_person": true,
+  "tin": null,
+  "unreliable_payer": false,
+  "updated_at": "2026-07-20T12:03:16.710+02:00",
+  "vat_payer": false,
+  "vatin": "CZ25115804",
+  "addresses": [
+    {
+      "creator": {
+        "user_id": "sheshnevan"
+      },
+      "modifier": {
+        "user_id": "sheshnevan"
+      },
+      "address_id": "praha_8_sokolovska_394",
+      "address_types": [
+        "accounting"
+      ],
+      "building_number": null,
+      "city": "Praha 8",
+      "country_id": "CZ",
+      "created_at": "2020-03-11T14:37:34+01:00",
+      "email": null,
+      "external_id": null,
+      "hidden": false,
+      "mobile_phone": null,
+      "name": "ACTIVE 24, s.r.o.",
+      "phone": null,
+      "postal_code": "186 00",
+      "status": "valid",
+      "street": "Sokolovská 394/17",
+      "updated_at": "2020-03-11T14:37:34+01:00",
+      "url": null
+    }
+  ],
+  "bank_accounts": [
+    {
+      "_meta": {
+        "href": "https://test.demo.uol.cz/api/v1/contact_bank_accounts/75748"
+      },
+      "bank_account_id": 75748,
+      "created_at": "2020-03-11T14:37:52+01:00",
+      "updated_at": "2020-03-11T14:37:52+01:00",
+      "creator": {
+        "user_id": "sheshnevan"
+      },
+      "modifier": {
+        "user_id": "sheshnevan"
+      },
+      "bank_account": "34175028/5500",
+      "bank_code": "5500",
+      "contact": {
+        "contact_id": "active_24_sro"
+      },
+      "country": {
+        "country_id": "CZ"
+      },
+      "currency": {
+        "currency_id": null
+      },
+      "external_id": null,
+      "iban": "CZ6155000000000034175028",
+      "default": true,
+      "status": "valid",
+      "name": null,
+      "published": true
+    }
+  ]
+}

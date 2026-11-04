@@ -1,0 +1,6 @@
+{
+  "status": "401",
+  "code": "0002",
+  "message": "Authentication failed. Please provide valid identification and token.",
+  "developerMessage": "User authentication failed. Check that proper authentication header is present and that authenticating user has api access allowed."
+}

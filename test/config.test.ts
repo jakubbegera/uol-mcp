@@ -1,0 +1,77 @@
+import { describe, expect, it } from 'vitest';
+import { ConfigError, DEMO, loadConfig, resolveTenant } from '../src/config.js';
+
+describe('resolveTenant', () => {
+  it.each([
+    ['demo', DEMO.baseUrl],
+    ['firma', 'https://firma.ucetnictvi.uol.cz/api'],
+    ['firma.ucetnictvi', 'https://firma.ucetnictvi.uol.cz/api'],
+    ['firma.sandbox', 'https://firma.sandbox.uol.cz/api'],
+    ['Firma.Ucetnictvi.uol.cz', 'https://firma.ucetnictvi.uol.cz/api'],
+    ['https://firma.ucetnictvi.uol.cz', 'https://firma.ucetnictvi.uol.cz/api'],
+    ['https://firma.ucetnictvi.uol.cz/api/v1/', 'https://firma.ucetnictvi.uol.cz/api'],
+    ['https://test.demo.uol.cz/api', DEMO.baseUrl],
+  ])('%s → %s', (input, expected) => {
+    expect(resolveTenant(input).baseUrl).toBe(expected);
+  });
+
+  it.each([
+    ['http://firma.ucetnictvi.uol.cz', /https/],
+    ['https://uol.cz.evil.example', /\*\.uol\.cz/],
+    ['https://example.com/api', /\*\.uol\.cz/],
+    ['firma/../x', /unexpected characters/],
+    ['  ', /empty/],
+  ])('rejects %s', (input, message) => {
+    expect(() => resolveTenant(input)).toThrow(message);
+  });
+
+  it('flags the DEMO tenant', () => {
+    expect(resolveTenant('https://test.demo.uol.cz').isDemo).toBe(true);
+    expect(resolveTenant('firma').isDemo).toBe(false);
+  });
+});
+
+describe('loadConfig', () => {
+  it('runs unconfigured when nothing is set', () => {
+    // act
+    const config = loadConfig({});
+
+    // assert
+    expect(config.credentials).toBeUndefined();
+    expect(config.configError).toBeUndefined();
+  });
+
+  it('fills the public credentials for UOL_TENANT=demo', () => {
+    // act
+    const config = loadConfig({ UOL_TENANT: 'demo' });
+
+    // assert
+    expect(config.credentials).toEqual({ baseUrl: DEMO.baseUrl, email: DEMO.email, token: DEMO.token, isDemo: true });
+  });
+
+  it('reports a half-filled credential pair instead of throwing', () => {
+    // act
+    const config = loadConfig({ UOL_TENANT: 'firma', UOL_EMAIL: 'a@b.cz' });
+
+    // assert
+    expect(config.credentials).toBeUndefined();
+    expect(config.configError).toMatch(/UOL_EMAIL and UOL_TOKEN/);
+  });
+
+  it('reports a missing tenant', () => {
+    expect(loadConfig({ UOL_EMAIL: 'a@b.cz', UOL_TOKEN: 't' }).configError).toMatch(/UOL_TENANT is missing/);
+  });
+
+  it('honours UOL_DOWNLOAD_DIR and UOL_TIMEOUT_MS', () => {
+    // act
+    const config = loadConfig({ UOL_DOWNLOAD_DIR: '/tmp/x', UOL_TIMEOUT_MS: '1234' });
+
+    // assert
+    expect(config.downloadDir).toBe('/tmp/x');
+    expect(config.requestTimeoutMs).toBe(1234);
+  });
+
+  it('exposes ConfigError for callers', () => {
+    expect(new ConfigError('x')).toBeInstanceOf(Error);
+  });
+});

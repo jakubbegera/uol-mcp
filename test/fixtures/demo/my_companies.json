@@ -1,0 +1,56 @@
+{
+  "_meta": {
+    "href": "https://test.demo.uol.cz/api/v1/my_companies",
+    "pagination": {
+      "first": "https://test.demo.uol.cz/api/v1/my_companies?page=1",
+      "last": "https://test.demo.uol.cz/api/v1/my_companies?page=1"
+    }
+  },
+  "items": [
+    {
+      "_meta": {
+        "href": "https://test.demo.uol.cz/api/v1/my_companies/58"
+      },
+      "created_at": "2004-07-29T21:01:38+02:00",
+      "updated_at": "2026-01-13T22:04:38+01:00",
+      "creator": {
+        "user_id": "uoladm"
+      },
+      "modifier": {
+        "user_id": "jac"
+      },
+      "building_number": null,
+      "country": {
+        "country_id": "CZ"
+      },
+      "my_company_id": 58,
+      "email": null,
+      "external_id": null,
+      "legal_entity": true,
+      "status": "valid",
+      "logo": null,
+      "mobile_phone": null,
+      "name": "DEMO, s. r. o.",
+      "other_identification": null,
+      "postal_code": "150 00",
+      "register_date": null,
+      "register_file_ref": "oddíl C, vložka 0",
+      "register_kept_at": "MS v Praze",
+      "register_text": "Registrováno MS v Praze, oddíl C, vložka 0.",
+      "street": "Rovná",
+      "phone": null,
+      "city": "Praha",
+      "url": null,
+      "valid_from": "2009-01-01",
+      "vat_payer_code": "K",
+      "vatin": "CZ00000019",
+      "vlozka": ".",
+      "company_number": "00000019",
+      "moss": false,
+      "road_tax": false,
+      "excise_tax": false,
+      "withholding_tax": false,
+      "tax_from_employment": false
+    }
+  ]
+}

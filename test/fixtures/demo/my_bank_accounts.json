@@ -1,0 +1,122 @@
+{
+  "_meta": {
+    "href": "https://test.demo.uol.cz/api/v1/my_bank_accounts",
+    "pagination": {
+      "first": "https://test.demo.uol.cz/api/v1/my_bank_accounts?page=1",
+      "last": "https://test.demo.uol.cz/api/v1/my_bank_accounts?page=1"
+    }
+  },
+  "items": [
+    {
+      "_meta": {
+        "href": "https://test.demo.uol.cz/api/v1/my_bank_accounts/cs_eur"
+      },
+      "created_at": "2014-10-03T13:40:27+02:00",
+      "updated_at": "2014-10-03T13:40:27+02:00",
+      "creator": {
+        "user_id": "jakes"
+      },
+      "modifier": {
+        "user_id": "jakes"
+      },
+      "opening_balance_date": "2014-01-01",
+      "auth_token_stub": null,
+      "bank_account": "2222222222/0200",
+      "bank_account_id": "cs_eur",
+      "bank_code": "0200",
+      "country": {
+        "country_id": "SK"
+      },
+      "after_credit_issued": "nothing",
+      "currency": {
+        "currency_id": "EUR"
+      },
+      "statement_download_interval": "daily",
+      "statement_download_type": "none",
+      "order_type": "A",
+      "external_id": null,
+      "iban": "SK2702000000002222222222",
+      "opening_balance": "0.0",
+      "after_invoice_received": "nothing",
+      "default": null,
+      "hidden": false,
+      "status": "valid",
+      "officially_published": false,
+      "send_order_to_bank": null
+    },
+    {
+      "_meta": {
+        "href": "https://test.demo.uol.cz/api/v1/my_bank_accounts/cs_usd"
+      },
+      "created_at": "2014-10-03T13:41:22+02:00",
+      "updated_at": "2014-10-03T13:41:22+02:00",
+      "creator": {
+        "user_id": "jakes"
+      },
+      "modifier": {
+        "user_id": "jakes"
+      },
+      "opening_balance_date": "2014-01-01",
+      "auth_token_stub": null,
+      "bank_account": "3333333333/0800",
+      "bank_account_id": "cs_usd",
+      "bank_code": "0800",
+      "country": {
+        "country_id": "CZ"
+      },
+      "after_credit_issued": "nothing",
+      "currency": {
+        "currency_id": "USD"
+      },
+      "statement_download_interval": "daily",
+      "statement_download_type": "none",
+      "order_type": "A",
+      "external_id": null,
+      "iban": "CZ1708000000003333333333",
+      "opening_balance": "0.0",
+      "after_invoice_received": "nothing",
+      "default": null,
+      "hidden": false,
+      "status": "valid",
+      "officially_published": false,
+      "send_order_to_bank": null
+    },
+    {
+      "_meta": {
+        "href": "https://test.demo.uol.cz/api/v1/my_bank_accounts/cs_czk"
+      },
+      "created_at": "2014-10-03T13:35:07+02:00",
+      "updated_at": "2026-02-03T15:06:37+01:00",
+      "creator": {
+        "user_id": "jakes"
+      },
+      "modifier": {
+        "user_id": "sevcikm"
+      },
+      "opening_balance_date": "2014-01-01",
+      "auth_token_stub": null,
+      "bank_account": "1111111111/0800",
+      "bank_account_id": "cs_czk",
+      "bank_code": "0800",
+      "country": {
+        "country_id": "CZ"
+      },
+      "after_credit_issued": "prepare_bank_order_draft",
+      "currency": {
+        "currency_id": "CZK"
+      },
+      "statement_download_interval": "daily",
+      "statement_download_type": "manually",
+      "order_type": "A",
+      "external_id": null,
+      "iban": "CZ1408000000001111111111",
+      "opening_balance": "180000.0",
+      "after_invoice_received": "prepare_bank_order_draft",
+      "default": true,
+      "hidden": false,
+      "status": "valid",
+      "officially_published": false,
+      "send_order_to_bank": null
+    }
+  ]
+}

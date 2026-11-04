@@ -1,0 +1,56 @@
+{
+  "name": "uol-mcp",
+  "version": "0.1.0",
+  "description": "Unofficial MCP server for the UOL Účetnictví accounting API",
+  "license": "MIT",
+  "author": "Jakub Begera",
+  "homepage": "https://github.com/jakubbegera/uol-mcp#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jakubbegera/uol-mcp.git"
+  },
+  "bugs": "https://github.com/jakubbegera/uol-mcp/issues",
+  "mcpName": "eu.humblecode/uol",
+  "type": "module",
+  "bin": {
+    "uol-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "README.cs.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "uol",
+    "ucetnictvi",
+    "accounting",
+    "czech"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "record-fixtures": "bash scripts/record-fixtures.sh",
+    "prepublishOnly": "npm run typecheck && npm test && npm run build",
+    "smoke": "tsx scripts/smoke-demo.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/server": "^2.4.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/client": "^2.4.0",
+    "@types/node": "^22.20.5",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.0"
+  }
+}
