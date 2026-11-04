@@ -32,6 +32,7 @@ const CODE_HINTS: Record<string, string> = {
   '0004': 'Check the id — the search tools return valid ids.',
   '0005': 'The record cannot be deleted because other records depend on it.',
   '0010': 'UOL internal error. Try again later; if it persists, contact api@uol.cz.',
+  '0014': 'The UOL user lacks the permission for this action (repairs need the cancel right on the user\'s sales membership).',
 };
 
 export function errorFromResponse(status: number, bodyText: string): UolApiError {

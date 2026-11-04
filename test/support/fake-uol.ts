@@ -117,6 +117,8 @@ const rawUtf8Header = (value: string) => Buffer.from(value, 'utf8').toString('la
  */
 export function fakeUolFetch(): { fetch: typeof fetch; requests: RecordedRequest[] } {
   const requests: RecordedRequest[] = [];
+  // Pairings created through the fake, so a read-back sees them like on UOL.
+  const pairings: Item[] = [];
 
   const route = (url: URL, accept: string | undefined, method: string, body: any): Response => {
     const path = url.pathname.replace(/^\/api/, '');
@@ -255,17 +257,11 @@ export function fakeUolFetch(): { fetch: typeof fetch; requests: RecordedRequest
           return json(paged(docs, q));
         }
         if (sub === 'pairings' && method === 'POST') {
-          return json(
-            {
-              ...fixture<Item>('uploaded_document_pairings'),
-              document_pairings: [
-                { document_pairable_type: body.document_pairable_type, document_pairable_id: Number(body.document_pairable_id) },
-              ],
-            },
-            201,
-          );
+          pairings.push({ document_pairable_type: body.document_pairable_type, document_pairable_id: Number(body.document_pairable_id) });
+          // UOL answers without the new pairing.
+          return json(fixture('uploaded_document_pairings'), 201);
         }
-        if (sub === 'pairings') return json(fixture('uploaded_document_pairings'));
+        if (sub === 'pairings') return json({ ...fixture<Item>('uploaded_document_pairings'), document_pairings: pairings });
         if (sub === 'tags' && method === 'POST') return json({ id: 5, ...body }, 201);
         if (sub === 'tags' && method === 'DELETE') return new Response(null, { status: 204 });
         if (sub === 'tags') return json(fixture('err_401'), 401);

@@ -81,15 +81,16 @@ describe('contacts', () => {
 });
 
 describe('create_purchase_invoice', () => {
-  const items = [{ description: 'Kancelářské potřeby', total_price: 1000, vat_rate: 21 }];
+  const items = [{ description: 'Kancelářské potřeby', total_price: 1000, vat_rate: 21, product_id: 'drmaj' }];
+  const bank = { bank_account: '1014977044/3030', variable_symbol: 124 };
 
   it('checks the supplier and books the invoice with line totals', async () => {
     // arrange
     const { call, writes } = await setup();
 
     // act
-    const missing = await call('create_purchase_invoice', { seller_id: 'missing_supplier', number: 'X1', items });
-    const { data } = await call('create_purchase_invoice', { seller_id: 'alzacz_as', number: 'X00124', items, confirm: true });
+    const missing = await call('create_purchase_invoice', { seller_id: 'missing_supplier', number: 'X1', items, ...bank });
+    const { data } = await call('create_purchase_invoice', { seller_id: 'alzacz_as', number: 'X00124', items, ...bank, confirm: true });
 
     // assert
     expect(missing.text).toMatch(/No contact with id missing_supplier/);
@@ -97,9 +98,38 @@ describe('create_purchase_invoice', () => {
       seller_id: 'alzacz_as',
       public_id: 'X00124',
       confirmed: 'true',
-      items: [{ description: 'Kancelářské potřeby', quantity: 1, total_price: 1000, vat_rate: 21, vat_calculation_method: 'from_below' }],
+      iban_or_account: '1014977044/3030',
+      bank_country_id: 'CZ',
+      variable_symbol: 124,
+      items: [
+        { description: 'Kancelářské potřeby', quantity: 1, total_price: 1000, vat_rate: 21, vat_calculation_method: 'from_below', product_id: 'drmaj' },
+      ],
     });
     expect(data.invoice).toMatchObject({ invoice_id: '2026900003', number: 'X00124', status: 'issued' });
+  });
+
+  it('asks for the bank details a bank-transfer invoice needs, before sending', async () => {
+    // arrange
+    const { call, writes } = await setup();
+
+    // act
+    const noAccount = await call('create_purchase_invoice', { seller_id: 'alzacz_as', number: 'X1', items, variable_symbol: 1 });
+    const cash = await call('create_purchase_invoice', { seller_id: 'alzacz_as', number: 'X2', items, payment_method: 'cash', dry_run: true });
+    const iban = await call('create_purchase_invoice', {
+      seller_id: 'alzacz_as',
+      number: 'X3',
+      items,
+      bank_account: 'CZ4930300000001014977044',
+      variable_symbol: 1,
+      dry_run: true,
+    });
+
+    // assert
+    expect(noAccount.text).toMatch(/needs bank_account/);
+    expect(cash.data.dry_run).toBe(true);
+    expect(iban.data.payload).toMatchObject({ iban_or_account: 'CZ4930300000001014977044' });
+    expect(iban.data.payload).not.toHaveProperty('bank_country_id');
+    expect(writes()).toEqual([]);
   });
 
   it('returns the earlier invoice for a reused idempotency key', async () => {
@@ -111,6 +141,7 @@ describe('create_purchase_invoice', () => {
       seller_id: 'alzacz_as',
       number: 'X1',
       items,
+      ...bank,
       idempotency_key: TAKEN_IDEMPOTENCY_KEY,
     });
 
@@ -133,6 +164,7 @@ describe('create_payment_demand', () => {
       { invoice_id: '2026000029', customer_id: 'active_24_sro', outstanding: 121 },
     ]);
     expect(writes()[0]?.body).toEqual({
+      contact_id: 'active_24_sro',
       note: 'Upomínka',
       status: 'valid',
       send_by_email: 'false',

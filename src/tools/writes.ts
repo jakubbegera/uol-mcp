@@ -41,7 +41,7 @@ const itemInput = z
     unit_price_with_vat: z.number().optional().describe('Unit price INCLUDING VAT (VAT is calculated from above)'),
     vat_rate: z.number().optional().describe('VAT rate in percent, e.g. 21, 12 or 0; omit for the product / tenant default'),
     discount_percent: z.number().min(0).max(100).optional(),
-    product_id: z.string().optional().describe('UOL product (ceník) id; drives the accounting of the line'),
+    product_id: z.string().min(1).describe('UOL product (ceník) id — required by UOL for every line, it decides how the line is booked; find one with list_codebook kind=products'),
   })
   .refine((i) => (i.unit_price === undefined) !== (i.unit_price_with_vat === undefined), {
     message: 'Give exactly one of unit_price or unit_price_with_vat',

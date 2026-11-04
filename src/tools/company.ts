@@ -19,6 +19,7 @@ const CODEBOOKS = {
   my_bank_accounts: '/v1/my_bank_accounts',
   petty_cashes: '/v1/petty_cashes',
   uploaded_document_tags: '/v1/uploaded_document_tags',
+  products: '/v1/products',
 } as const;
 
 type Codebook = keyof typeof CODEBOOKS;
@@ -92,7 +93,7 @@ export function registerCompanyTools(server: McpServer, ctx: ToolContext): void 
       description:
         'Reference data (číselníky) used by invoices and documents: currencies, countries, departments (střediska), ' +
         'contracts (zakázky), price lists, product categories, predefined texts, document templates, payment rules, ' +
-        'own bank accounts, petty cashes (pokladny) and document tags. Records are returned as UOL sends them, minus audit fields.',
+        'own bank accounts, petty cashes (pokladny), document tags and products (the product_id invoice lines need). Records are returned as UOL sends them, minus audit fields.',
       input: z.object({
         kind: z.enum(Object.keys(CODEBOOKS) as [Codebook, ...Codebook[]]),
         page: pageArg,

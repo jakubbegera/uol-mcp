@@ -105,13 +105,15 @@ export function registerDocumentWriteTools(server: McpServer, ctx: ToolContext):
         const current = await session.client.uploadedDocumentWithPairings(args.document_id);
         return { data: { dry_run: true, payload, pairings: pairingsOf(current) } };
       }
-      const doc = await auditedWrite(
+      await auditedWrite(
         session,
         ctx,
         { tool: 'pair_uploaded_document', method: 'POST', path: `/v1/uploaded_documents/${args.document_id}/pairings`, payload },
         () => session.client.pairUploadedDocument(args.document_id, payload),
         () => args.document_id,
       );
+      // The POST answer doesn't list the new pairing (seen on DEMO); read it back.
+      const doc = await session.client.uploadedDocumentWithPairings(args.document_id);
       return { data: { dry_run: false, payload, pairings: pairingsOf(doc) } };
     },
   );

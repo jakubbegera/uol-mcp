@@ -172,7 +172,8 @@ With `UOL_ACCESS=write` these tools appear:
 `UOL_ACCESS=full` adds `delete_sales_invoice` (drafts only), `repair_sales_invoice` (storno or back to
 draft for issued invoices) and `api_request` (a raw write to any endpoint).
 
-Every write supports `dry_run` (shows exactly what would be sent), creates are safe to retry
+Invoice lines need a UOL product (`list_codebook` with `kind: products` lists them). Every write
+supports `dry_run` (shows exactly what would be sent), creates are safe to retry
 (idempotency key), and the tools are marked so clients ask you before running them. Set
 `UOL_AUDIT_LOG` to keep a record of every write.
 

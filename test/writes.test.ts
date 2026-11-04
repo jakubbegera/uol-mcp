@@ -89,8 +89,8 @@ describe('access levels', () => {
 
 describe('create_sales_invoice', () => {
   const items = [
-    { description: 'Konzultace', quantity: 2, unit_price: 1500, vat_rate: 21 },
-    { description: 'Licence', unit_price_with_vat: 1210 },
+    { description: 'Konzultace', quantity: 2, unit_price: 1500, vat_rate: 21, product_id: 'konzultace' },
+    { description: 'Licence', unit_price_with_vat: 1210, product_id: 'licence' },
   ];
 
   it('dry_run validates the buyer and shows the payload without writing', async () => {
@@ -104,8 +104,8 @@ describe('create_sales_invoice', () => {
     expect(writes()).toEqual([]);
     expect(data).toMatchObject({ dry_run: true, buyer: { id: 'alzacz_as', name: 'Alza.cz a.s.' }, invoice: null });
     expect(data.payload.items).toEqual([
-      { description: 'Konzultace', quantity: 2, unit_price: 1500, vat_calculation_method: 'from_below', vat_rate: 21 },
-      { description: 'Licence', quantity: 1, unit_price_vat_inclusive: 1210, vat_calculation_method: 'from_above' },
+      { description: 'Konzultace', quantity: 2, unit_price: 1500, vat_calculation_method: 'from_below', vat_rate: 21, product_id: 'konzultace' },
+      { description: 'Licence', quantity: 1, unit_price_vat_inclusive: 1210, vat_calculation_method: 'from_above', product_id: 'licence' },
     ]);
     expect(data.payload).not.toHaveProperty('status');
     expect(data.idempotency_key).toMatch(/^[0-9a-f-]{36}$/);
@@ -160,6 +160,19 @@ describe('create_sales_invoice', () => {
     expect(data).toMatchObject({ already_existed: true, invoice: { invoice_id: '2026000044' } });
   });
 
+  it('requires a product on every line, as UOL does', async () => {
+    // arrange
+    const { call, writes } = await setup();
+
+    // act
+    const { result } = await call('create_sales_invoice', { buyer_id: 'alzacz_as', items: [{ description: 'x', unit_price: 1 }] });
+
+    // assert
+    expect(result.isError).toBe(true);
+    expect(JSON.stringify(result.content)).toMatch(/product_id/);
+    expect(writes()).toEqual([]);
+  });
+
   it('rejects an item with both or neither price', async () => {
     // arrange
     const { call } = await setup();
@@ -167,7 +180,7 @@ describe('create_sales_invoice', () => {
     // act
     const { result } = await call('create_sales_invoice', {
       buyer_id: 'alzacz_as',
-      items: [{ description: 'x', unit_price: 1, unit_price_with_vat: 2 }],
+      items: [{ description: 'x', unit_price: 1, unit_price_with_vat: 2, product_id: 'p' }],
     });
 
     // assert
@@ -185,7 +198,7 @@ describe('update_sales_invoice', () => {
     const { data } = await call('update_sales_invoice', {
       invoice_id: DRAFT_INVOICE_ID,
       due_date: '2026-12-01',
-      add_items: [{ description: 'Doprava', unit_price: 200 }],
+      add_items: [{ description: 'Doprava', unit_price: 200, product_id: 'doprava' }],
       remove_item_ids: [2825626],
       issue: true,
     });
@@ -197,7 +210,7 @@ describe('update_sales_invoice', () => {
       due_date: '2026-12-01',
       status: 'confirmed',
       items: [
-        { description: 'Doprava', quantity: 1, unit_price: 200, vat_calculation_method: 'from_below' },
+        { description: 'Doprava', quantity: 1, unit_price: 200, vat_calculation_method: 'from_below', product_id: 'doprava' },
         { id: 2825626, _destroy: 1 },
       ],
     });

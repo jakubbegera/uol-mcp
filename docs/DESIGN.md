@@ -71,6 +71,12 @@ code, in a tool description, or in the server instructions.
 | 24 | A pairing is created with the target's `gid`; invoices expose it on their detail, petty-cash documents in their list. | `pair_uploaded_document` takes an invoice_id and resolves the gid itself. |
 | 25 | Bank movements carry their date only on their parts (`items[].date`), and the list has no date filter. | The movement row takes the date of its first part. |
 | 26 | Purchase-invoice lines are written as line totals (`total_price` / `total_price_vat_inclusive`), sales-invoice lines as unit prices. | The two create tools use different item shapes on purpose. |
+| 27 | Every invoice line needs an existing `product_id` ("product: must exist; can't be blank"), on sales and purchase invoices alike — verified on DEMO. | `product_id` is required in both create tools; products are listed by `list_codebook kind=products`. |
+| 28 | A received invoice paid by bank transfer (the default) needs the supplier's account and a variable symbol. A domestic account number (`123/0800`) is only parsed together with `bank_country_id`; an IBAN works alone. | The tool checks both before sending and adds `bank_country_id` (default CZ) for non-IBAN numbers. |
+| 29 | A payment demand needs the customer's `contact_id`, although the spec does not mark it required. | Taken from the checked invoices (they must share one customer). |
+| 30 | The pairing POST answers with the document but without the new pairing. | `pair_uploaded_document` reads the document back. |
+| 31 | Missing rights answer 403 with code `0014` (the DEMO user can't repair invoices); a duplicate upload answers 400. | Both are explained in the tool error. |
+| 32 | The DEMO tenant's credentials are public, so its rate limit is shared with everyone using them; 429 can appear even below our own budget. | Expected on DEMO only. |
 
 Error codes from the spec: `0001` missing auth, `0002` bad credentials or missing permission,
 `0003` unknown tenant, `0004` not found, `0005` cannot delete (integrity), `0010` internal error.
@@ -226,11 +232,11 @@ All read tools are annotated `readOnlyHint: true, idempotentHint: true, openWorl
 | Tool | API | Safety |
 |---|---|---|
 | `upload_document(file_path \| content_base64, note)` | `POST /uploaded_documents` (multipart) | The path must resolve (symlinks followed) inside `UOL_UPLOAD_DIRS`; PDF only (extension and `%PDF-` header); 20 MB cap. A duplicate names the existing document. |
-| `create_sales_invoice` | `POST /sales_invoices` | Draft unless `issue: true`; buyer verified first; auto `idempotency_key` — a repeated key returns the first invoice (`already_existed`); `dry_run` returns the payload without sending |
+| `create_sales_invoice` | `POST /sales_invoices` | Draft unless `issue: true`; buyer verified first; `product_id` on every line (§2 #27); auto `idempotency_key` — a repeated key returns the first invoice (`already_existed`); `dry_run` returns the payload without sending |
 | `update_sales_invoice` | `PATCH /sales_invoices/{id}` | Drafts only, checked before sending; header fields, `add_items`, `remove_item_ids` (`_destroy`), `issue: true`; only given fields are sent; `destructiveHint: true` |
 | `create_contact` | `POST /contacts` | Refuses a second contact with the same IČO unless `allow_duplicate`; address fields form the accounting address |
 | `update_contact` | `PATCH /contacts/{id}` | Updates the accounting address by its `address_id` (or adds one); `destructiveHint: true` |
-| `create_purchase_invoice` | `POST /purchase_invoices` | Supplier verified first; line totals (§2 #26); unconfirmed unless `confirm: true`; `idempotency_key` with the same recovery as sales invoices |
+| `create_purchase_invoice` | `POST /purchase_invoices` | Supplier verified first; line totals with `product_id` (§2 #26, #27); bank details checked for bank transfers (§2 #28); unconfirmed unless `confirm: true`; `idempotency_key` with the same recovery as sales invoices |
 | `create_payment_demand` | `POST /demands_for_payment` | Every invoice must be an unpaid issued invoice of one customer; `send_by_email` / `send_by_mail` always false |
 | `mark_document_processed` | `PATCH /uploaded_documents/{id}` | The only state the API accepts; idempotent |
 | `pair_uploaded_document` | `POST …/pairings` | Resolves the target's gid (§2 #24) |

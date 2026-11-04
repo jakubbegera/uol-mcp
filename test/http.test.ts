@@ -53,6 +53,18 @@ describe('errorFromResponse', () => {
     expect(error.message).toBe("Validation failed — file: It's already uploaded. (43)");
   });
 
+  it('explains a missing permission (0014)', () => {
+    // arrange
+    const body = JSON.stringify({ status: '403', code: '0014', message: 'You are not authorized to perform this action.' });
+
+    // act
+    const error = errorFromResponse(403, body);
+
+    // assert
+    expect(error.code).toBe('0014');
+    expect(error.message).toMatch(/lacks the permission/);
+  });
+
   it('explains the rate limit', () => {
     expect(errorFromResponse(429, '').code).toBe('rate_limited');
   });

@@ -49,6 +49,8 @@ function contactOutput(raw: RawContact) {
   return { ...contactRowOf(raw), raw: stripNoise(raw as Record<string, unknown>) };
 }
 
+const IBAN = /^[A-Z]{2}\d{2}[A-Z0-9]{10,30}$/i;
+
 const purchaseItem = z
   .object({
     description: z.string().min(1),
@@ -56,7 +58,7 @@ const purchaseItem = z
     total_price: z.number().optional().describe('Line total WITHOUT VAT'),
     total_price_with_vat: z.number().optional().describe('Line total INCLUDING VAT'),
     vat_rate: z.number().describe('VAT rate in percent: 21, 12 or 0'),
-    product_id: z.string().optional().describe('UOL product id; decides how the line is booked'),
+    product_id: z.string().min(1).describe('UOL product (ceník) id — required by UOL for every line, it decides how the line is booked; find one with list_codebook kind=products'),
   })
   .refine((i) => (i.total_price === undefined) !== (i.total_price_with_vat === undefined), {
     message: 'Give exactly one of total_price or total_price_with_vat',
@@ -215,6 +217,7 @@ export function registerRecordWriteTools(server: McpServer, ctx: ToolContext): v
       description:
         'Books a received (purchase) invoice from a supplier that already exists in contacts — e.g. after reading an uploaded PDF. ' +
         'Lines carry totals, not unit prices: total_price without VAT or total_price_with_vat. ' +
+        'Paid by bank transfer (the default) UOL needs the supplier\'s bank_account and the variable_symbol. ' +
         'Stays unconfirmed unless confirm=true. Retrying with the same idempotency_key never books it twice. ' +
         `${CONFIRM_FIRST}`,
       input: z.object({
@@ -228,7 +231,8 @@ export function registerRecordWriteTools(server: McpServer, ctx: ToolContext): v
         variable_symbol: z.number().int().optional(),
         constant_symbol: z.number().int().optional(),
         specific_symbol: z.number().int().optional(),
-        bank_account: z.string().optional().describe("Supplier's account or IBAN to pay to"),
+        bank_account: z.string().optional().describe("Supplier's account to pay to: IBAN, or a domestic number like 123456789/0800"),
+        bank_country: z.string().length(2).optional().describe('Country of a non-IBAN bank_account; default CZ'),
         currency: z.string().length(3).optional(),
         exchange_rate: z.number().positive().optional(),
         total_amount: z.number().optional().describe('Invoice total incl. VAT, as a cross-check UOL compares with the lines'),
@@ -256,6 +260,13 @@ export function registerRecordWriteTools(server: McpServer, ctx: ToolContext): v
         }
         throw error;
       });
+      // UOL rejects a bank-transfer invoice without these; say so before sending anything.
+      if ((args.payment_method ?? 'bank_transfer') === 'bank_transfer' && (!args.bank_account || args.variable_symbol === undefined)) {
+        throw new InputError(
+          'A received invoice paid by bank transfer needs bank_account (the supplier\'s account or IBAN) and variable_symbol; ' +
+            'or set payment_method, e.g. cash or credit_card.',
+        );
+      }
       const idempotencyKey = args.idempotency_key ?? randomUUID();
       const payload = compact({
         seller_id: args.seller_id,
@@ -268,6 +279,8 @@ export function registerRecordWriteTools(server: McpServer, ctx: ToolContext): v
         constant_symbol: args.constant_symbol,
         specific_symbol: args.specific_symbol,
         iban_or_account: args.bank_account,
+        // UOL only parses a domestic account number together with its country.
+        bank_country_id: args.bank_account && !IBAN.test(args.bank_account) ? (args.bank_country?.toUpperCase() ?? 'CZ') : undefined,
         currency_id: args.currency?.toUpperCase(),
         exchange_rate: args.exchange_rate,
         total_amount: args.total_amount,
@@ -342,6 +355,7 @@ export function registerRecordWriteTools(server: McpServer, ctx: ToolContext): v
     async (args, session) => {
       const invoices = await checkUnpaid(session, args.invoice_ids);
       const payload = compact({
+        contact_id: invoices[0]?.customer_id ?? undefined,
         date: args.date,
         note: args.note,
         status: args.confirm ? 'confirmed' : 'valid',
