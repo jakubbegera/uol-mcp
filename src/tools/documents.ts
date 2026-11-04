@@ -1,11 +1,11 @@
-import { pathToFileURL } from 'node:url';
 import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
-import { saveDownload, safeFileName } from '../domain/files.js';
+import { safeFileName } from '../domain/files.js';
 import type { RawUploadedDocument } from '../uol/client.js';
 import { UolApiError } from '../uol/errors.js';
 import { pageInfo, refId, stripNoise, str } from '../uol/normalize.js';
 import { type ToolContext, registerReadTool } from './context.js';
+import { deliverFile } from './files.js';
 import { isoDate, limitArg, pageArg, pageInfo as pageInfoSchema, savedFile } from './schemas.js';
 
 const STATES = ['unprocessed', 'processed', 'error'] as const;
@@ -137,7 +137,7 @@ export function registerDocumentTools(server: McpServer, ctx: ToolContext): void
       }
       const extension = str(doc.format) ?? 'pdf';
       const name = safeFileName(file.fileName, `doklad-${document_id}.${extension}`);
-      const path = await saveDownload(config.downloadDir, name, file.bytes);
+      const { path, blocks } = await deliverFile(config, name, file.bytes, file.contentType);
       return {
         data: {
           document_id,
@@ -146,7 +146,7 @@ export function registerDocumentTools(server: McpServer, ctx: ToolContext): void
           content_type: file.contentType,
           size_bytes: file.bytes.length,
         },
-        extra: [{ type: 'resource_link', uri: pathToFileURL(path).href, name, mimeType: file.contentType }],
+        extra: blocks,
       };
     },
   );

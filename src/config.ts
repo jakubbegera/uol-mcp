@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { delimiter, join } from 'node:path';
 
 /** Public DEMO tenant published in the UOL OpenAPI spec. */
 export const DEMO = {
@@ -20,6 +20,10 @@ export interface UolCredentials {
 export const TOOLSETS = ['core', 'insights'] as const;
 export type Toolset = (typeof TOOLSETS)[number];
 
+/** `read` — no writes; `write` — create / update / upload; `full` — reserved for destructive tools. */
+export const ACCESS_LEVELS = ['read', 'write', 'full'] as const;
+export type Access = (typeof ACCESS_LEVELS)[number];
+
 export interface AppConfig {
   /** Absent when the server runs unconfigured — tools then answer with setup instructions. */
   credentials?: UolCredentials;
@@ -27,11 +31,26 @@ export interface AppConfig {
   configError?: string;
   /** Tool groups to register; every group when unset. */
   toolsets?: ReadonlySet<Toolset>;
+  /** Which write tools exist at all; `read` when unset. */
+  access?: Access;
+  /** Directories upload_document may read files from. */
+  uploadDirs?: string[];
+  /** JSONL file every write is appended to. */
+  auditLog?: string;
+  /**
+   * Return exported / downloaded files inside the tool result instead of only
+   * saving them — for the HTTP transport, whose clients can't reach the server's disk.
+   */
+  embedFiles?: boolean;
   /** Non-fatal configuration problems, printed at startup. */
   warnings?: string[];
   downloadDir: string;
   requestTimeoutMs: number;
   debug: boolean;
+}
+
+export function defaultUploadDirs(): string[] {
+  return ['Downloads', 'Desktop', 'Documents'].map((d) => join(homedir(), d));
 }
 
 /** `UOL_TOOLSETS=core,insights` / `all`; unknown names are reported, not fatal. */
@@ -106,9 +125,22 @@ function value(raw: string | undefined): string | undefined {
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   const { toolsets, unknown } = parseToolsets(value(env.UOL_TOOLSETS));
+  const warnings =
+    unknown.length > 0 ? [`ignoring unknown UOL_TOOLSETS entries: ${unknown.join(', ')} (known: ${TOOLSETS.join(', ')}, all)`] : [];
+  const rawAccess = value(env.UOL_ACCESS)?.toLowerCase() ?? 'read';
+  const access = (ACCESS_LEVELS as readonly string[]).includes(rawAccess) ? (rawAccess as Access) : 'read';
+  if (access !== rawAccess) warnings.push(`unknown UOL_ACCESS "${rawAccess}", using read (known: ${ACCESS_LEVELS.join(', ')})`);
+  const uploadDirs = value(env.UOL_UPLOAD_DIRS)
+    ?.split(delimiter)
+    .map((d) => d.trim())
+    .filter(Boolean);
+
   const config: AppConfig = {
     toolsets,
-    warnings: unknown.length > 0 ? [`ignoring unknown UOL_TOOLSETS entries: ${unknown.join(', ')} (known: ${TOOLSETS.join(', ')}, all)`] : [],
+    access,
+    uploadDirs: uploadDirs && uploadDirs.length > 0 ? uploadDirs : defaultUploadDirs(),
+    auditLog: value(env.UOL_AUDIT_LOG),
+    warnings,
     downloadDir: value(env.UOL_DOWNLOAD_DIR) ?? defaultDownloadDir(),
     requestTimeoutMs: Number(env.UOL_TIMEOUT_MS) > 0 ? Number(env.UOL_TIMEOUT_MS) : 30_000,
     debug: env.UOL_DEBUG === '1' || env.UOL_DEBUG === 'true',

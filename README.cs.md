@@ -9,8 +9,8 @@ vydané a přijaté faktury, kdo vám dluží, nahrané doklady, kontakty.
 
 [English](README.md)
 
-**Stav:** verze 0.2, pouze čtení. Zatím není na npm; do prvního vydání se spouští
-[ze zdrojového kódu](README.md#from-source).
+**Stav:** verze 0.3, ve výchozím stavu pouze čtení, zápis lze zapnout. Zatím není na npm; do prvního
+vydání se spouští [ze zdrojového kódu](README.md#from-source).
 
 ## Co umí
 
@@ -78,13 +78,24 @@ Nastavení → Developer → Edit Config a doplňte:
 
 Po restartu Claude Desktop zkuste: „Jaké jsou údaje naší firmy v UOL?“
 
-Ostatní klienty (Claude Code, Cursor, VS Code) a všechny proměnné prostředí popisuje
-[anglické README](README.md#configuration).
+Ostatní klienty (Claude Code, Cursor, VS Code), Docker, HTTP server a všechny proměnné prostředí
+popisuje [anglické README](README.md#configuration).
+
+## Zápis (volitelný)
+
+S `UOL_ACCESS=write` (v Claude Desktop rozšíření pole „Access“ = `write`) asistent umí navíc:
+
+- **nahrát doklad** (PDF) účetní do UOL, a to jen ze složek Stažené soubory, Plocha a Dokumenty;
+- **vystavit fakturu** existujícímu kontaktu, standardně jako koncept;
+- **upravit nebo vystavit koncept faktury**; už vystavenou fakturu UOL měnit nedovolí.
+
+Před každým zápisem si asistent nechá vše ukázat nanečisto a klient vás požádá o souhlas.
+Opakované vytvoření stejné faktury nevznikne dvakrát.
 
 ## Soukromí a bezpečnost
 
-- Server data jen čte. Zápis (nahrávání dokladů, vystavování faktur) bude volitelný
-  a ve výchozím stavu vypnutý.
+- Bez `UOL_ACCESS=write` server data jen čte. Text uvnitř faktur, poznámek a dokladů je pro
+  asistenta jen data: před schválením zápisu si zkontrolujte, co navrhuje.
 - Vše, co nástroje vrátí, dostane AI model, který váš klient používá. Účetnictví obsahuje osobní
   údaje kontaktů a zaměstnanců; zvolte si takový tarif, s jehož podmínkami souhlasíte.
 - Přihlašovací údaje se posílají jen na `https://*.uol.cz` a nikdy se nezapisují do logů.

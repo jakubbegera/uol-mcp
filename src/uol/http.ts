@@ -47,12 +47,28 @@ export class UolHttp {
   /** GET a JSON resource; [path] is relative to the API root, e.g. `/v1/sales_invoices`. */
   async getJson<T>(path: string, query?: Query): Promise<T> {
     const response = await this.send(this.apiUrl(path, query), { accept: 'application/json' });
-    const text = await response.text();
-    try {
-      return JSON.parse(text) as T;
-    } catch {
-      throw new UolApiError(`UOL returned a non-JSON body for ${path}.`, response.status, 'invalid_response');
-    }
+    return readJson<T>(response, path);
+  }
+
+  /**
+   * POST / PATCH a JSON body. Booleans go out as strings — UOL requires that
+   * for every boolean attribute in a write. Never retried: a timeout may still
+   * have created the record, which is what idempotency keys are for.
+   */
+  async sendJson<T>(method: 'POST' | 'PATCH', path: string, body: unknown): Promise<T> {
+    const response = await this.send(this.apiUrl(path), {
+      method,
+      accept: 'application/json',
+      contentType: 'application/json',
+      body: JSON.stringify(stringifyBooleans(body)),
+    });
+    return readJson<T>(response, path);
+  }
+
+  /** POST `multipart/form-data`; fetch sets the boundary. */
+  async postForm<T>(path: string, form: FormData): Promise<T> {
+    const response = await this.send(this.apiUrl(path), { method: 'POST', accept: 'application/json', body: form });
+    return readJson<T>(response, path);
   }
 
   /**
@@ -101,7 +117,13 @@ export class UolHttp {
 
   private async send(
     url: string,
-    { accept, auth = true, method = 'GET' }: { accept?: string; auth?: boolean; method?: string },
+    {
+      accept,
+      auth = true,
+      method = 'GET',
+      body,
+      contentType,
+    }: { accept?: string; auth?: boolean; method?: string; body?: string | FormData; contentType?: string },
   ): Promise<Response> {
     const parsed = new URL(url);
     const ownApi = parsed.origin === this.origin && parsed.pathname.startsWith('/api/');
@@ -110,6 +132,7 @@ export class UolHttp {
     const headers: Record<string, string> = {};
     if (auth) headers.Authorization = this.authHeader;
     if (accept) headers.Accept = accept;
+    if (contentType) headers['Content-Type'] = contentType;
 
     const id = randomBytes(3).toString('hex');
     const started = Date.now();
@@ -117,7 +140,7 @@ export class UolHttp {
 
     let response: Response;
     try {
-      response = await this.fetchImpl(url, { method, headers, signal: AbortSignal.timeout(this.timeoutMs) });
+      response = await this.fetchImpl(url, { method, headers, body, signal: AbortSignal.timeout(this.timeoutMs) });
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
       this.log(`[${id}] ✗ ${reason}`);
@@ -132,6 +155,25 @@ export class UolHttp {
   private log(line: string): void {
     if (this.debug) process.stderr.write(`uol-mcp ${line}\n`);
   }
+}
+
+async function readJson<T>(response: Response, path: string): Promise<T> {
+  const text = await response.text();
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    throw new UolApiError(`UOL returned a non-JSON body for ${path}.`, response.status, 'invalid_response');
+  }
+}
+
+/** `true` → `"true"` at any depth; everything else unchanged. */
+export function stringifyBooleans(value: unknown): unknown {
+  if (typeof value === 'boolean') return String(value);
+  if (Array.isArray(value)) return value.map(stringifyBooleans);
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, stringifyBooleans(v)]));
+  }
+  return value;
 }
 
 /** Query strings of foreign URLs carry signatures; never write them to logs. */

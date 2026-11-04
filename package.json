@@ -1,6 +1,6 @@
 {
   "name": "uol-mcp",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Unofficial MCP server for the UOL Účetnictví accounting API",
   "license": "MIT",
   "author": "Jakub Begera",
@@ -43,6 +43,7 @@
     "smoke": "tsx scripts/smoke-demo.ts"
   },
   "dependencies": {
+    "@modelcontextprotocol/node": "^2.1.2",
     "@modelcontextprotocol/server": "^2.4.0",
     "zod": "^4.6.7"
   },

@@ -9,7 +9,7 @@ bookkeeping: issued and received invoices, who owes you money, uploaded document
 
 [Česky](README.cs.md)
 
-**Status:** v0.2 — read-only. Not on npm yet; run it [from source](#from-source) until the first release.
+**Status:** v0.3 — read-only by default, opt-in writes. Not on npm yet; run it [from source](#from-source) until the first release.
 
 ## What it can do
 
@@ -63,6 +63,9 @@ Want to try it first? `UOL_TENANT=demo` uses UOL's public DEMO company, no token
 | `UOL_TOKEN` | API token |
 | `UOL_DOWNLOAD_DIR` | Where exported and downloaded files go (default `~/Downloads/uol-mcp`) |
 | `UOL_TOOLSETS` | `core`, `insights` or `all` (default) — fewer tools for clients with small tool budgets |
+| `UOL_ACCESS` | `read` (default) or `write` — see [Writing](#writing-opt-in) |
+| `UOL_UPLOAD_DIRS` | Folders `upload_document` may read from (default `~/Downloads`, `~/Desktop`, `~/Documents`; `:`-separated, `;` on Windows) |
+| `UOL_AUDIT_LOG` | File that records every write as a JSON line |
 | `UOL_DEBUG` | `1` logs requests to stderr (never credentials) |
 
 ### Claude Desktop
@@ -123,15 +126,49 @@ In an MCP client config, use `docker` as the command and the rest as `args`.
 Each release ships `uol-mcp.mcpb`. Open it to install, then fill in tenant, e-mail and token in the
 form; the token is stored as a secret. `bash scripts/build-mcpb.sh` builds the bundle from source.
 
+### HTTP server (self-hosting)
+
+```bash
+MCP_TRANSPORT=http MCP_AUTH_TOKEN=change-me UOL_TENANT=firma UOL_EMAIL=you@example.com UOL_TOKEN=your-token npx -y uol-mcp
+```
+
+The endpoint is `http://127.0.0.1:3000/mcp` (`HOST`, `PORT` to change; `/health` for probes).
+Two modes:
+
+- **One tenant**: UOL credentials in the server's env. Clients must send `Authorization: Bearer
+  <MCP_AUTH_TOKEN>`; the server refuses to start without the token.
+- **Pass-through**: no UOL credentials in the env. Each client sends its own `X-UOL-Tenant`,
+  `X-UOL-Email` and `X-UOL-Token` headers with every request; the server stores nothing.
+  `MCP_AUTH_TOKEN` is optional.
+
+Over HTTP, exported invoices and downloaded documents come back inside the tool result instead of
+being saved on the server. In Docker, bind to all interfaces and publish the port:
+`docker run -p 3000:3000 -e MCP_TRANSPORT=http -e HOST=0.0.0.0 -e MCP_ALLOWED_HOSTS=mcp.example.com …`.
+
 ### Check the setup
 
 ```bash
 UOL_TENANT=firma UOL_EMAIL=you@example.com UOL_TOKEN=your-token npx -y uol-mcp doctor
 ```
 
+## Writing (opt-in)
+
+With `UOL_ACCESS=write` three more tools appear:
+
+| Tool | Does |
+|---|---|
+| `upload_document` | Uploads a PDF to UOL's document inbox for the accountant (only from `UOL_UPLOAD_DIRS`) |
+| `create_sales_invoice` | Creates an issued invoice for an existing contact — a draft unless `issue: true` |
+| `update_sales_invoice` | Changes or issues a draft invoice (UOL doesn't allow editing issued ones) |
+
+Every write supports `dry_run` (shows exactly what would be sent), creates are safe to retry
+(idempotency key), and the tools are marked so clients ask you before running them. Set
+`UOL_AUDIT_LOG` to keep a record of every write.
+
 ## Privacy and safety
 
-- The server only reads. Write tools (uploading documents, issuing invoices) will be opt-in and off by default.
+- Read-only unless you set `UOL_ACCESS=write`. Text inside invoices, notes and documents is treated
+  as data: review what the assistant proposes to write before you approve it.
 - Whatever the tools return goes to the AI model your client uses. Accounting data contains personal
   data of your contacts and employees — use a plan whose terms you are comfortable with.
 - Credentials are used only for `https://*.uol.cz` and are never written to logs or tool output.

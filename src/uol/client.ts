@@ -241,6 +241,14 @@ export class UolClient {
     this.http.getJson<Page<RawInternalDocument>>('/v1/internal_documents', query);
   bankBalances = (query: Query) => this.http.getJson<Page<RawBankBalance>>('/v1/bank_balances', query);
 
+  createSalesInvoice = (body: Record<string, unknown>) =>
+    this.http.sendJson<RawSalesInvoice>('POST', '/v1/sales_invoices', body);
+  /** Drafts only; UOL answers 403 for an issued invoice. */
+  updateSalesInvoice = (invoiceId: string, body: Record<string, unknown>) =>
+    this.http.sendJson<RawSalesInvoice>('PATCH', `/v1/sales_invoices/${id(invoiceId)}`, body);
+  /** Multipart with `file` (PDF) and optional `note`. */
+  uploadDocument = (form: FormData) => this.http.postForm<RawUploadedDocument>('/v1/uploaded_documents', form);
+
   list = (path: string, query: Query) => this.http.getJson<Page<Record<string, unknown>>>(path, query);
   get = (path: string, query?: Query) => this.http.getJson<unknown>(path, query);
 }

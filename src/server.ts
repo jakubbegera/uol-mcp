@@ -12,6 +12,7 @@ import { registerInsightTools } from './tools/insights.js';
 import { registerInvoiceTools } from './tools/invoices.js';
 import { registerRawTools } from './tools/raw.js';
 import { registerReceivableTools } from './tools/receivables.js';
+import { registerWriteTools } from './tools/writes.js';
 import { UolHttp } from './uol/http.js';
 import type { RateLimiter } from './uol/rate-limit.js';
 
@@ -66,6 +67,7 @@ export function createServer(ctx: ToolContext): McpServer {
     registerRawTools(server, ctx);
   }
   if (toolsets.has('insights')) registerInsightTools(server, ctx);
+  if (ctx.config.access === 'write' || ctx.config.access === 'full') registerWriteTools(server, ctx);
   registerResources(server, ctx);
   registerPrompts(server, toolsets);
   return server;

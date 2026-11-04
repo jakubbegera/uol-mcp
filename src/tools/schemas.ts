@@ -29,6 +29,7 @@ export const invoiceStatus = z
 export const invoiceType = z.enum(['standard', 'corrective', 'proforma', 'penalty']);
 
 export const invoiceItem = z.object({
+  item_id: z.number().nullable().describe('Line id, for update_sales_invoice remove_item_ids'),
   description: z.string().nullable(),
   quantity: z.number().nullable(),
   unit_price: z.number().nullable().describe('Without VAT'),
@@ -39,7 +40,10 @@ export const invoiceItem = z.object({
 });
 
 export const savedFile = z.object({
-  file_path: z.string().describe('Absolute path of the saved file on the machine running uol-mcp'),
+  file_path: z
+    .string()
+    .nullable()
+    .describe('Absolute path of the saved file on the machine running uol-mcp; null when the file is embedded in the result (HTTP transport)'),
   file_name: z.string(),
   content_type: z.string(),
   size_bytes: z.number(),

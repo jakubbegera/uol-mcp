@@ -1,3 +1,4 @@
+import { delimiter } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { ConfigError, DEMO, loadConfig, parseToolsets, resolveTenant } from '../src/config.js';
 
@@ -83,6 +84,30 @@ describe('loadConfig', () => {
     // assert
     expect([...result.toolsets]).toEqual(toolsets);
     expect(result.unknown).toEqual(unknown);
+  });
+
+  it.each([
+    [undefined, 'read', 0],
+    ['write', 'write', 0],
+    ['FULL', 'full', 0],
+    ['admin', 'read', 1],
+  ])('parses UOL_ACCESS=%j as %s', (raw, access, warnings) => {
+    // act
+    const config = loadConfig({ UOL_ACCESS: raw });
+
+    // assert
+    expect(config.access).toBe(access);
+    expect(config.warnings).toHaveLength(warnings);
+  });
+
+  it('splits UOL_UPLOAD_DIRS on the platform delimiter and defaults to the usual user folders', () => {
+    // act
+    const custom = loadConfig({ UOL_UPLOAD_DIRS: `/a${delimiter}/b${delimiter}` });
+    const fallback = loadConfig({});
+
+    // assert
+    expect(custom.uploadDirs).toEqual(['/a', '/b']);
+    expect(fallback.uploadDirs?.map((d) => d.split(/[\\/]/).pop())).toEqual(['Downloads', 'Desktop', 'Documents']);
   });
 
   it('treats unexpanded host placeholders as unset', () => {

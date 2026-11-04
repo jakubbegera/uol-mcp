@@ -1,12 +1,12 @@
-import { pathToFileURL } from 'node:url';
 import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
-import { saveDownload, safeFileName } from '../domain/files.js';
+import { safeFileName } from '../domain/files.js';
 import { type Payment, paymentOfReceivable } from '../domain/receivables.js';
 import type { RawInvoiceItem, RawPurchaseInvoice, RawSalesInvoice } from '../uol/client.js';
 import { UolApiError } from '../uol/errors.js';
 import { amount, hrefId, invoiceStatus, money, pageInfo, refId, str } from '../uol/normalize.js';
 import { type ToolContext, registerReadTool } from './context.js';
+import { deliverFile } from './files.js';
 import {
   invoiceItem,
   invoiceStatus as statusSchema,
@@ -33,7 +33,7 @@ const amounts = {
   currency: z.string().nullable(),
 };
 
-const salesRow = z.object({
+export const salesRow = z.object({
   invoice_id: z.string().describe('Internal id, usable with get_sales_invoice'),
   number: z.string().nullable().describe('Evidence number shown on the invoice'),
   type: z.string().nullable(),
@@ -61,7 +61,7 @@ const purchaseRow = z.object({
   variable_symbol: z.string().nullable(),
 });
 
-const commonDetail = {
+export const commonDetail = {
   vat_amounts: z.array(z.number().nullable()).describe('UOL vat1..vat3 amounts in rate order'),
   payment_method: z.string().nullable(),
   constant_symbol: z.string().nullable(),
@@ -88,6 +88,7 @@ function totals(raw: RawSalesInvoice | RawPurchaseInvoice) {
 
 function items(raw: RawInvoiceItem[] | undefined) {
   return (raw ?? []).map((item) => ({
+    item_id: item.id ?? null,
     description: str(item.description),
     quantity: amount(item.quantity),
     unit_price: amount(item.unit_price),
@@ -98,7 +99,7 @@ function items(raw: RawInvoiceItem[] | undefined) {
   }));
 }
 
-function salesRowOf(raw: RawSalesInvoice, names: Map<string, string | null>, pay: Payment) {
+export function salesRowOf(raw: RawSalesInvoice, names: Map<string, string | null>, pay: Payment) {
   const { vats: _vats, ...money } = totals(raw);
   const buyerId = hrefId(raw.buyer);
   return {
@@ -134,7 +135,7 @@ function purchaseRowOf(raw: RawPurchaseInvoice, names: Map<string, string | null
   };
 }
 
-function detailOf(raw: RawSalesInvoice | RawPurchaseInvoice) {
+export function detailOf(raw: RawSalesInvoice | RawPurchaseInvoice) {
   return {
     vat_amounts: totals(raw).vats,
     payment_method: str(raw.payment_method),
@@ -369,8 +370,8 @@ export function registerInvoiceTools(server: McpServer, ctx: ToolContext): void 
         throw new UolApiError(`Expected ${mediaType} but UOL answered ${file.contentType}.`, 200, 'invalid_response');
       }
       const name = safeFileName(file.fileName, `faktura-${invoice_id}.${format}`);
-      const path = await saveDownload(config.downloadDir, name, file.bytes);
-      const extra =
+      const { path, blocks } = await deliverFile(config, name, file.bytes, mediaType);
+      const xml =
         format === 'isdoc'
           ? [{ type: 'text' as const, text: truncate(file.bytes.toString('utf8'), 100_000) }]
           : [];
@@ -383,7 +384,7 @@ export function registerInvoiceTools(server: McpServer, ctx: ToolContext): void 
           content_type: file.contentType,
           size_bytes: file.bytes.length,
         },
-        extra: [{ type: 'resource_link', uri: pathToFileURL(path).href, name, mimeType: mediaType }, ...extra],
+        extra: [...blocks, ...xml],
       };
     },
   );

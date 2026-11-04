@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 import { serveStdio } from '@modelcontextprotocol/server/stdio';
-import { SETUP_HINT, loadConfig } from './config.js';
+import { ConfigError, SETUP_HINT, loadConfig } from './config.js';
 import { currentRevision } from './domain/company.js';
+import { httpMode, httpOptionsFromEnv, startHttpServer } from './http.js';
 import { VERSION, createContext, createServer } from './server.js';
 import { describeError } from './tools/context.js';
 import { vatPeriod } from './uol/normalize.js';
@@ -10,6 +11,7 @@ const HELP = `uol-mcp ${VERSION} — MCP server for the UOL Účetnictví API
 
 Usage:
   uol-mcp            run the MCP server over stdio (what MCP clients start)
+  uol-mcp --http     run it over Streamable HTTP at http://HOST:PORT/mcp
   uol-mcp doctor     check the configuration against the UOL API
   uol-mcp --version
   uol-mcp --help
@@ -19,8 +21,18 @@ Environment:
                      or a full https://….uol.cz URL
   UOL_EMAIL          UOL login e-mail
   UOL_TOKEN          API token (UOL → /api_tokens)
+  UOL_ACCESS         read (default) or write — write adds upload / invoice tools
   UOL_DOWNLOAD_DIR   where exported / downloaded files are saved
+  UOL_UPLOAD_DIRS    folders upload_document may read from
+  UOL_AUDIT_LOG      JSONL file recording every write
+  UOL_TOOLSETS       core, insights or all (default)
   UOL_DEBUG=1        log requests to stderr
+
+HTTP (--http or MCP_TRANSPORT=http):
+  HOST, PORT         bind address, default 127.0.0.1:3000
+  MCP_AUTH_TOKEN     bearer token clients must send; required when UOL_* credentials are set
+  MCP_ALLOWED_HOSTS  accepted Host names (comma-separated) when not bound to localhost
+  Without UOL_* credentials every request brings X-UOL-Tenant, X-UOL-Email, X-UOL-Token.
 `;
 
 async function doctor(): Promise<number> {
@@ -32,12 +44,29 @@ async function doctor(): Promise<number> {
     const company = currentRevision((await client.myCompanies()).items ?? []);
     console.log(`OK  ${client.http.baseUrl}`);
     console.log(`    ${company?.name ?? '(no company)'} · IČO ${company?.company_number ?? '—'} · VAT ${vatPeriod(company?.vat_payer_code)}`);
-    console.log(`    downloads → ${config.downloadDir}`);
+    console.log(`    access ${config.access ?? 'read'} · downloads → ${config.downloadDir}`);
     return 0;
   } catch (error) {
     console.error(`FAIL  ${describeError(error)}`);
     return 1;
   }
+}
+
+async function serveHttp(): Promise<void> {
+  const config = loadConfig();
+  for (const warning of config.warnings ?? []) process.stderr.write(`uol-mcp: ${warning}\n`);
+  const options = httpOptionsFromEnv();
+  try {
+    await startHttpServer(config, options);
+  } catch (error) {
+    if (!(error instanceof ConfigError)) throw error;
+    process.stderr.write(`uol-mcp: ${error.message}\n`);
+    process.exitCode = 1;
+    return;
+  }
+  process.stderr.write(
+    `uol-mcp ${VERSION}: ${httpMode(config)} MCP endpoint on http://${options.host}:${options.port}/mcp\n`,
+  );
 }
 
 const MIN_NODE_MAJOR = 22;
@@ -65,6 +94,10 @@ async function main(): Promise<void> {
   }
   if (arg === 'doctor') {
     process.exitCode = await doctor();
+    return;
+  }
+  if (arg === '--http' || (!arg && process.env.MCP_TRANSPORT === 'http')) {
+    await serveHttp();
     return;
   }
   if (arg) {

@@ -86,14 +86,24 @@ Desktop — the two paths that reach non-developers.
 ### 3.2 Transports
 
 - **stdio** (default) — the local process; credentials from env.
-- **Streamable HTTP** (`--http`, planned for v0.3) — for self-hosting (Docker, Railway, Coolify).
-  Spec 2026-07-28 has no protocol sessions, and this server keeps no per-connection state, so it
-  scales trivially. Two credential modes:
-  - *single-tenant*: credentials in the server env, `MCP_AUTH_TOKEN` bearer **required**;
-  - *pass-through*: the client sends `X-UOL-Tenant`, `X-UOL-Email`, `X-UOL-Token` on every request
-    and the server stores nothing. Works in clients with custom headers (Claude Code, Cursor,
-    VS Code), not in claude.ai connectors (OAuth only, §8).
-- HTTP binds to `127.0.0.1` by default and validates `Origin` (DNS-rebinding protection).
+- **Streamable HTTP** (`--http` or `MCP_TRANSPORT=http`, endpoint `/mcp`, plus `/health`) — for
+  self-hosting (Docker, Railway, Coolify). Built on the SDK's `createMcpHandler`, which serves
+  2026-07-28 requests and falls back to stateless serving for 2025-era clients. Every request gets
+  a fresh `McpServer`; only the per-user context (HTTP client, rate limiter, caches) is reused. Two
+  credential modes, picked from the configuration:
+  - *single-tenant*: UOL credentials in the server env; `MCP_AUTH_TOKEN` bearer is **required**
+    (the server refuses to start without it) and `X-UOL-*` headers are rejected with 400;
+  - *pass-through*: no credentials in the env; every request sends `X-UOL-Tenant`, `X-UOL-Email`,
+    `X-UOL-Token` (the DEMO tenant needs only the first) and the server stores nothing. Contexts are
+    kept per credential hash (at most 100, idle 30 minutes) so each user keeps their own rate-limit
+    budget. Works in clients with custom headers (Claude Code, Cursor, VS Code), not in claude.ai
+    connectors (OAuth only, §8). `MCP_AUTH_TOKEN` is optional here.
+- HTTP binds to `127.0.0.1` by default. On a loopback bind only localhost `Host` headers are
+  accepted (DNS-rebinding protection); elsewhere `MCP_ALLOWED_HOSTS` restricts them. Browser
+  `Origin`s must be localhost unless listed in `MCP_ALLOWED_ORIGINS`. The bearer token is compared
+  in constant time.
+- Over HTTP the server's disk is out of the client's reach, so export / download tools return the
+  file embedded in the result (`file_path: null`) instead of saving it.
 
 ### 3.3 Configuration
 
@@ -104,12 +114,14 @@ Desktop — the two paths that reach non-developers.
 | `UOL_DOWNLOAD_DIR` | `~/Downloads/uol-mcp` (temp dir if there is no Downloads folder) | Where export/download tools save files | 0.1 |
 | `UOL_TIMEOUT_MS` | `30000` | Per-request timeout | 0.1 |
 | `UOL_DEBUG` | off | Request log on stderr (path, status, duration; never credentials) | 0.1 |
-| `UOL_ACCESS` | `read` | `read` · `write` (adds create/update/upload) · `full` (adds destructive tools and generic writes) | 0.3 |
+| `UOL_ACCESS` | `read` | `read` · `write` (adds upload / create / update) · `full` (same as write for now; will add destructive tools and generic writes) | 0.3 |
 | `UOL_TOOLSETS` | `all` | Tool groups to register (§4): `core`, `insights` (later also `ledger, banking, warehouse`), or `all`. Unknown names are reported on stderr. | 0.2 |
 | `UOL_UPLOAD_DIRS` | `~/Downloads:~/Desktop:~/Documents` | Directories `upload_document` may read from | 0.3 |
 | `UOL_AUDIT_LOG` | — | JSONL file recording every write (tool, endpoint, payload hash, result id) | 0.3 |
 | `UOL_PROFILES_FILE` | — | Several tenants; adds an `account` argument to every tool and a `list_accounts` tool | 0.4 |
+| `MCP_TRANSPORT` | `stdio` | `http` starts the HTTP transport (same as `--http`) | 0.3 |
 | `MCP_AUTH_TOKEN`, `PORT`, `HOST` | —, 3000, 127.0.0.1 | HTTP mode | 0.3 |
+| `MCP_ALLOWED_HOSTS`, `MCP_ALLOWED_ORIGINS` | localhost names | Accepted `Host` / browser `Origin` hostnames, comma-separated | 0.3 |
 
 The server **starts and lists tools without credentials**: registries and the Docker catalog
 introspect `tools/list` that way. A tool call without credentials returns a setup message.
@@ -119,8 +131,9 @@ introspect `tools/list` that way. A tool call without credentials returns a setu
 
 ```
 src/
-  index.ts              CLI: stdio | doctor | --version
-  server.ts             builds the McpServer and registers tools per toolset
+  index.ts              CLI: stdio | --http | doctor | --version
+  http.ts               Streamable HTTP transport: modes, bearer, Host / Origin checks, /health
+  server.ts             builds the McpServer and registers tools per toolset and access level
   instructions.ts       server instructions: the domain hints from §2 for the model
   resources.ts          uol://guide, uol://company
   prompts.ts            Czech workflow prompts
@@ -141,7 +154,9 @@ src/
     bank.ts             newest balance snapshot per account, totals per currency
     paging.ts           bounded multi-page reads
     files.ts            safe file names, saving downloads
-  tools/                one module per area: register…Tools(server, ctx)
+    uploads.ts          reading upload files: allowed folders, PDF check, size cap
+    audit.ts            JSONL audit log of writes
+  tools/                one module per area: register…Tools(server, ctx); writes.ts for UOL_ACCESS=write
 test/
   fixtures/demo/        raw responses recorded from the DEMO tenant (scripts/record-fixtures.sh,
                         natural persons pseudonymised by scripts/scrub-fixtures.mjs)
@@ -204,9 +219,9 @@ All read tools are annotated `readOnlyHint: true, idempotentHint: true, openWorl
 
 | Tool | API | Safety |
 |---|---|---|
-| `upload_document(file_path \| content_base64, note)` | `POST /uploaded_documents` (multipart) | Path restricted to `UOL_UPLOAD_DIRS`; PDF / JPEG / PNG only; size cap |
-| `create_sales_invoice` | `POST /sales_invoices` | Unconfirmed (draft) unless `confirm: true`; auto `idempotency_key`; `dry_run` returns the payload without sending |
-| `update_sales_invoice` | `PATCH /sales_invoices/{id}` | Unconfirmed invoices only; a 403 explains the disconfirm path |
+| `upload_document(file_path \| content_base64, note)` | `POST /uploaded_documents` (multipart) | The path must resolve (symlinks followed) inside `UOL_UPLOAD_DIRS`; PDF only (extension and `%PDF-` header); 20 MB cap. A duplicate names the existing document. |
+| `create_sales_invoice` | `POST /sales_invoices` | Draft unless `issue: true`; buyer verified first; auto `idempotency_key` — a repeated key returns the first invoice (`already_existed`); `dry_run` returns the payload without sending |
+| `update_sales_invoice` | `PATCH /sales_invoices/{id}` | Drafts only, checked before sending; header fields, `add_items`, `remove_item_ids` (`_destroy`), `issue: true`; only given fields are sent; `destructiveHint: true` |
 | `create_contact`, `update_contact` | `POST/PATCH /contacts` | later |
 | `create_purchase_invoice` | `POST /purchase_invoices` | later; `idempotency_key`, `dry_run` |
 | `set_uploaded_document_state`, `pair_uploaded_document`, `tag_uploaded_document`, `untag_uploaded_document` | `PATCH /uploaded_documents/{id}`, `…/pairings`, `…/tags` | later |
@@ -322,7 +337,7 @@ Neither is planned for the first releases.
 |---|---|
 | **v0.1** | Config, HTTP client + rate limit + errors, `core` read tools, stdio, fixture tests, README (EN + CS), MIT |
 | **v0.2** | `insights` tools, resources + prompts, toolsets, MCPB bundle, `server.json`, Docker image, CI and release workflows (publishing waits for the public release) |
-| **v0.3** | `upload_document`, `create_sales_invoice`, `update_sales_invoice` with idempotency / dry run / audit log; HTTP transport |
+| **v0.3** | `upload_document`, `create_sales_invoice`, `update_sales_invoice` with idempotency / dry run / audit log; `UOL_ACCESS`; HTTP transport (single-tenant + pass-through) |
 | **v0.4** | Remaining writes, multi-tenant profiles, destructive tools, remaining toolsets |
 
 ---

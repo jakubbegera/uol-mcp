@@ -3,7 +3,7 @@
   "name": "eu.humblecode/uol",
   "title": "UOL Účetnictví (unofficial)",
   "description": "Invoices, receivables, VAT, ledger and documents from UOL Účetnictví (Czech online accounting)",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "repository": {
     "url": "https://github.com/jakubbegera/uol-mcp",
     "source": "github"
@@ -13,7 +13,7 @@
     {
       "registryType": "npm",
       "identifier": "uol-mcp",
-      "version": "0.2.0",
+      "version": "0.3.0",
       "transport": { "type": "stdio" },
       "environmentVariables": [
         {
@@ -39,7 +39,7 @@
     },
     {
       "registryType": "oci",
-      "identifier": "ghcr.io/jakubbegera/uol-mcp:0.2.0",
+      "identifier": "ghcr.io/jakubbegera/uol-mcp:0.3.0",
       "transport": { "type": "stdio" },
       "environmentVariables": [
         {

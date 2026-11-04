@@ -22,7 +22,14 @@ export interface RecordedRequest {
   url: URL;
   method: string;
   headers: Record<string, string>;
+  /** Parsed JSON body, or form fields (files as `{ name, size, type }`). */
+  body?: any;
 }
+
+/** A draft sales invoice the fake serves alongside the DEMO fixtures. */
+export const DRAFT_INVOICE_ID = '2026900001';
+/** An idempotency key the fake treats as already used. */
+export const TAKEN_IDEMPOTENCY_KEY = 'taken-key';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
@@ -65,6 +72,42 @@ function ledgerRows(q: URLSearchParams): Item[] {
   );
 }
 
+async function readBody(body: RequestInit['body']): Promise<any> {
+  if (typeof body === 'string') return JSON.parse(body);
+  if (body instanceof FormData) {
+    const fields: Record<string, unknown> = {};
+    for (const [key, value] of body.entries()) {
+      fields[key] =
+        typeof value === 'string'
+          ? value
+          : { name: value.name, size: value.size, type: value.type, head: Buffer.from(await value.arrayBuffer()).subarray(0, 5).toString('latin1') };
+    }
+    return fields;
+  }
+  return undefined;
+}
+
+/** What UOL answers to a create: the stored invoice, draft unless `status: confirmed` was sent. */
+function createdInvoice(body: any): Item {
+  const detail = fixture<Item>('sales_invoice_detail');
+  return {
+    ...detail,
+    invoice_id: 2026900002,
+    public_id: '2026900002',
+    status: body.status === 'confirmed' ? 'confirmed' : 'valid',
+    type: body.type ?? 'standard',
+    idempotency_key: body.idempotency_key,
+    buyer: { _meta: { href: `https://test.demo.uol.cz/api/v1/contacts/${body.buyer_id}` } },
+    note: body.note ?? null,
+    items: (body.items ?? []).map((item: any, index: number) => ({ ...item, id: 9000 + index })),
+  };
+}
+
+function patchedFields(body: any): Item {
+  const { items: _items, tax_payment_date, ...rest } = body;
+  return { ...rest, ...(tax_payment_date ? { tax_payment_date } : {}) };
+}
+
 /** UTF-8 bytes in a header value, as UOL sends them; fetch exposes them as Latin-1. */
 const rawUtf8Header = (value: string) => Buffer.from(value, 'utf8').toString('latin1');
 
@@ -75,7 +118,7 @@ const rawUtf8Header = (value: string) => Buffer.from(value, 'utf8').toString('la
 export function fakeUolFetch(): { fetch: typeof fetch; requests: RecordedRequest[] } {
   const requests: RecordedRequest[] = [];
 
-  const route = (url: URL, accept: string | undefined, method: string): Response => {
+  const route = (url: URL, accept: string | undefined, method: string, body: any): Response => {
     const path = url.pathname.replace(/^\/api/, '');
     const q = url.searchParams;
     const segments = path.split('/').filter(Boolean); // ["v1", resource, id?, sub?]
@@ -87,9 +130,22 @@ export function fakeUolFetch(): { fetch: typeof fetch; requests: RecordedRequest
       case 'my_companies':
         return json(fixture('my_companies'));
       case 'sales_invoices': {
-        if (!id) return json(singlePage('sales_invoices'));
         const detail = fixture<Item>('sales_invoice_detail');
+        const draft = { ...detail, invoice_id: Number(DRAFT_INVOICE_ID), public_id: DRAFT_INVOICE_ID, status: 'valid' };
+        if (!id && method === 'POST') {
+          if (body.idempotency_key === TAKEN_IDEMPOTENCY_KEY) {
+            return json(
+              { message: 'Validation failed', errors: [{ resource: 'SalesInvoice', field: 'idempotency_key', code: 'has already been taken' }] },
+              422,
+            );
+          }
+          return json(createdInvoice(body), 201);
+        }
+        if (!id && q.get('idempotency_key') === TAKEN_IDEMPOTENCY_KEY) return json({ items: [detail] });
+        if (!id) return json(singlePage('sales_invoices'));
+        if (id === DRAFT_INVOICE_ID) return json(method === 'PATCH' ? { ...draft, ...patchedFields(body) } : draft);
         if (id !== String(detail.invoice_id)) return notFound();
+        if (method === 'PATCH') return json(fixture('err_404_sales_invoice'), 403);
         if (accept === 'application/pdf') {
           return new Response(Buffer.from('%PDF-1.4 fake'), { headers: { 'content-type': 'application/pdf' } });
         }
@@ -136,6 +192,15 @@ export function fakeUolFetch(): { fetch: typeof fetch; requests: RecordedRequest
       case 'bank_balances':
         return json(paged(synthetic<Body>('bank_balances').items ?? [], q));
       case 'uploaded_documents': {
+        if (!id && method === 'POST') {
+          if (body.file?.name === 'dup.pdf') {
+            return json(
+              { message: 'Validation failed', errors: [{ resource: 'UploadedDocument', field: 'file', code: "It's already uploaded. (43)" }] },
+              422,
+            );
+          }
+          return json({ id: 99, state: 'unprocessed', note: body.note ?? '', format: 'pdf' }, 201);
+        }
         if (!id) {
           const state = q.get('state');
           const docs = (fixture<Body>('uploaded_documents').items ?? []).filter((d) => !state || d.state === state);
@@ -169,8 +234,9 @@ export function fakeUolFetch(): { fetch: typeof fetch; requests: RecordedRequest
     const url = new URL(input instanceof Request ? input.url : input.toString());
     const headers = Object.fromEntries(new Headers(init?.headers).entries());
     const method = init?.method ?? 'GET';
-    requests.push({ url, method, headers });
-    return route(url, headers.accept, method);
+    const body = await readBody(init?.body);
+    requests.push({ url, method, headers, body });
+    return route(url, headers.accept, method, body ?? {});
   };
 
   return { fetch: fakeFetch as typeof fetch, requests };
