@@ -25,7 +25,9 @@ Environment:
   UOL_DOWNLOAD_DIR   where exported / downloaded files are saved
   UOL_UPLOAD_DIRS    folders upload_document may read from
   UOL_AUDIT_LOG      JSONL file recording every write
-  UOL_TOOLSETS       core, insights or all (default)
+  UOL_TOOLSETS       core, insights (default), ledger, banking, warehouse or all
+  UOL_ACCOUNTS       several tenants: a,b plus UOL_ACCOUNT_A_TENANT / _EMAIL / _TOKEN / _LABEL
+  UOL_PROFILES_FILE  several tenants from a JSON file instead
   UOL_DEBUG=1        log requests to stderr
 
 HTTP (--http or MCP_TRANSPORT=http):
@@ -35,21 +37,28 @@ HTTP (--http or MCP_TRANSPORT=http):
   Without UOL_* credentials every request brings X-UOL-Tenant, X-UOL-Email, X-UOL-Token.
 `;
 
+/** Checks every configured account (or the single tenant) against the API. */
 async function doctor(): Promise<number> {
   const config = loadConfig();
+  for (const warning of config.warnings ?? []) console.error(`WARN  ${warning}`);
   const ctx = createContext(config);
-  try {
-    const { client } = ctx.session();
-    await client.ping();
-    const company = currentRevision((await client.myCompanies()).items ?? []);
-    console.log(`OK  ${client.http.baseUrl}`);
-    console.log(`    ${company?.name ?? '(no company)'} · IČO ${company?.company_number ?? '—'} · VAT ${vatPeriod(company?.vat_payer_code)}`);
-    console.log(`    access ${config.access ?? 'read'} · downloads → ${config.downloadDir}`);
-    return 0;
-  } catch (error) {
-    console.error(`FAIL  ${describeError(error)}`);
-    return 1;
+  const accounts = config.accounts?.map((a) => a.name) ?? [undefined];
+  let failures = 0;
+  for (const account of accounts) {
+    const label = account ? `[${account}${account === config.defaultAccount ? ', default' : ''}] ` : '';
+    try {
+      const { client } = ctx.session(account);
+      await client.ping();
+      const company = currentRevision((await client.myCompanies()).items ?? []);
+      console.log(`OK  ${label}${client.http.baseUrl}`);
+      console.log(`    ${company?.name ?? '(no company)'} · IČO ${company?.company_number ?? '—'} · VAT ${vatPeriod(company?.vat_payer_code)}`);
+    } catch (error) {
+      failures += 1;
+      console.error(`FAIL  ${label}${describeError(error)}`);
+    }
   }
+  console.log(`    access ${config.access ?? 'read'} · downloads → ${config.downloadDir}`);
+  return failures === 0 ? 0 : 1;
 }
 
 async function serveHttp(): Promise<void> {

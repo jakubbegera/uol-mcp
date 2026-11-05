@@ -9,8 +9,7 @@ vydané a přijaté faktury, kdo vám dluží, nahrané doklady, kontakty.
 
 [English](README.md)
 
-**Stav:** verze 0.4, ve výchozím stavu pouze čtení, zápis lze zapnout. Zatím není na npm; do prvního
-vydání se spouští [ze zdrojového kódu](README.md#from-source).
+**Stav:** verze 0.4, ve výchozím stavu pouze čtení, zápis lze zapnout.
 
 ## Co umí
 

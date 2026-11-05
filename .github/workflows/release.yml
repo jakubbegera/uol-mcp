@@ -48,8 +48,20 @@ jobs:
         with:
           node-version-file: .nvmrc
           registry-url: https://registry.npmjs.org
+      # Trusted publishing (OIDC) needs npm >= 11.5; Node 22 ships npm 10.
+      - run: npm install -g npm@12.2.1
       - run: npm ci
-      - run: npm publish --provenance --access public
+      # The very first version is published by hand (npm needs the package before trusted
+      # publishing can be enabled); skipping an existing version also makes re-runs safe.
+      - name: Publish unless this version is already on npm
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
+        run: |
+          if npm view "uol-mcp@${VERSION}" version >/dev/null 2>&1; then
+            echo "uol-mcp@${VERSION} is already on npm"
+          else
+            npm publish --provenance --access public
+          fi
 
   image:
     needs: verify

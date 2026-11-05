@@ -66,6 +66,45 @@ describe('UOL_PROFILES_FILE', () => {
   });
 });
 
+describe('UOL_ACCOUNTS', () => {
+  it('reads every account from prefixed variables, first one as default', () => {
+    // act
+    const config = loadConfig({
+      UOL_ACCOUNTS: 'firma, klient-b',
+      UOL_ACCOUNT_FIRMA_TENANT: 'firma',
+      UOL_ACCOUNT_FIRMA_EMAIL: 'ja@firma.cz',
+      UOL_ACCOUNT_FIRMA_TOKEN: 't1',
+      UOL_ACCOUNT_KLIENT_B_TENANT: 'demo',
+      UOL_ACCOUNT_KLIENT_B_LABEL: 'Klient B',
+    });
+
+    // assert
+    expect(config.configError).toBeUndefined();
+    expect(config.defaultAccount).toBe('firma');
+    expect(config.accounts?.map((a) => [a.name, a.label, a.credentials.baseUrl, a.credentials.token])).toEqual([
+      ['firma', undefined, 'https://firma.ucetnictvi.uol.cz/api', 't1'],
+      ['klient-b', 'Klient B', 'https://test.demo.uol.cz/api', '3R1Cc_wzcSuq02Wsh1-uww'],
+    ]);
+  });
+
+  it.each([
+    [{ UOL_ACCOUNTS: 'a', UOL_ACCOUNT_A_TENANT: 'firma', UOL_ACCOUNT_A_EMAIL: 'x@y.cz' }, /UOL_ACCOUNT_A_EMAIL and UOL_ACCOUNT_A_TOKEN/],
+    [{ UOL_ACCOUNTS: 'a' }, /UOL_ACCOUNT_A_TENANT is missing/],
+    [{ UOL_ACCOUNTS: 'a', UOL_ACCOUNT_A_TENANT: '<tenant-a>' }, /UOL_ACCOUNT_A_TENANT has unexpected characters/],
+    [{ UOL_ACCOUNTS: 'a', UOL_ACCOUNT_A_TENANT: 'demo', UOL_DEFAULT_ACCOUNT: 'b' }, /not listed/],
+    [{ UOL_ACCOUNTS: 'a', UOL_ACCOUNT_A_TENANT: 'demo', UOL_PROFILES_FILE: '/x.json' }, /not both/],
+  ])('reports %j', (env, message) => {
+    expect(loadConfig(env).configError).toMatch(message);
+  });
+
+  it('honours UOL_DEFAULT_ACCOUNT', () => {
+    expect(
+      loadConfig({ UOL_ACCOUNTS: 'a,b', UOL_ACCOUNT_A_TENANT: 'demo', UOL_ACCOUNT_B_TENANT: 'demo', UOL_DEFAULT_ACCOUNT: 'B' })
+        .defaultAccount,
+    ).toBe('b');
+  });
+});
+
 describe('multi-account tools', () => {
   it('adds list_accounts and an account argument, and routes calls to that tenant', async () => {
     // arrange

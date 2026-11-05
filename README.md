@@ -9,7 +9,7 @@ bookkeeping: issued and received invoices, who owes you money, uploaded document
 
 [Česky](README.cs.md)
 
-**Status:** v0.4 — read-only by default, opt-in writes. Not on npm yet; run it [from source](#from-source) until the first release.
+**Status:** v0.4 — read-only by default, opt-in writes.
 
 ## What it can do
 
@@ -179,8 +179,27 @@ supports `dry_run` (shows exactly what would be sent), creates are safe to retry
 
 ## Several companies
 
-Accountants with several clients on UOL can serve them all from one server. Point `UOL_PROFILES_FILE`
-at a JSON file:
+Accountants with several clients on UOL can serve them all from one server. List the accounts in
+`UOL_ACCOUNTS` and give each one its own variables (name upper-cased, `-` becomes `_`):
+
+```json
+"env": {
+  "UOL_ACCOUNTS": "firma,novak",
+  "UOL_ACCOUNT_FIRMA_TENANT": "firma",
+  "UOL_ACCOUNT_FIRMA_EMAIL": "ja@firma.cz",
+  "UOL_ACCOUNT_FIRMA_TOKEN": "op://Private/UOL firma/credential",
+  "UOL_ACCOUNT_NOVAK_TENANT": "novak",
+  "UOL_ACCOUNT_NOVAK_EMAIL": "ja@firma.cz",
+  "UOL_ACCOUNT_NOVAK_TOKEN": "op://Private/UOL novak/credential",
+  "UOL_ACCOUNT_NOVAK_LABEL": "Novák s.r.o."
+}
+```
+
+The first account is the default (or set `UOL_DEFAULT_ACCOUNT`). With the 1Password CLI, start the
+server as `op run -- node …/dist/index.js` and the `op://` references are replaced by the tokens at
+startup — nothing secret sits in the config. `uol-mcp doctor` checks every account.
+
+Alternatively, point `UOL_PROFILES_FILE` at a JSON file:
 
 ```json
 {

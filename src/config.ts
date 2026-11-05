@@ -95,9 +95,9 @@ export class ConfigError extends Error {}
  * Only `https://*.uol.cz` hosts are allowed, so a typo or a hostile config can't
  * make the server send the user's Basic-auth credentials somewhere else.
  */
-export function resolveTenant(input: string): { baseUrl: string; isDemo: boolean } {
+export function resolveTenant(input: string, name = 'UOL_TENANT'): { baseUrl: string; isDemo: boolean } {
   const raw = input.trim();
-  if (raw === '') throw new ConfigError('UOL_TENANT is empty');
+  if (raw === '') throw new ConfigError(`${name} is empty`);
   if (raw.toLowerCase() === 'demo') return { baseUrl: DEMO.baseUrl, isDemo: true };
 
   let host: string;
@@ -106,20 +106,20 @@ export function resolveTenant(input: string): { baseUrl: string; isDemo: boolean
     try {
       url = new URL(raw);
     } catch {
-      throw new ConfigError(`UOL_TENANT is not a valid URL: ${raw}`);
+      throw new ConfigError(`${name} is not a valid URL: ${raw}`);
     }
-    if (url.protocol !== 'https:') throw new ConfigError(`UOL_TENANT must use https: ${raw}`);
+    if (url.protocol !== 'https:') throw new ConfigError(`${name} must use https: ${raw}`);
     host = url.hostname.toLowerCase();
   } else {
     const prefix = raw.toLowerCase().replace(/\.uol\.cz$/, '');
     if (!/^[a-z0-9-]+(\.[a-z0-9-]+)*$/.test(prefix)) {
-      throw new ConfigError(`UOL_TENANT has unexpected characters: ${raw}`);
+      throw new ConfigError(`${name} has unexpected characters: ${raw}`);
     }
     host = prefix.includes('.') ? `${prefix}.uol.cz` : `${prefix}.ucetnictvi.uol.cz`;
   }
 
   if (!host.endsWith('.uol.cz')) {
-    throw new ConfigError(`UOL_TENANT must point to a *.uol.cz host, got ${host}`);
+    throw new ConfigError(`${name} must point to a *.uol.cz host, got ${host}`);
   }
   const baseUrl = `https://${host}/api`;
   return { baseUrl, isDemo: baseUrl === DEMO.baseUrl };
@@ -167,11 +167,14 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   const email = value(env.UOL_EMAIL);
   const token = value(env.UOL_TOKEN);
   const profilesFile = value(env.UOL_PROFILES_FILE);
+  const accountList = value(env.UOL_ACCOUNTS);
 
   try {
-    if (profilesFile) {
-      if (tenant || email || token) warnings.push('UOL_PROFILES_FILE is set; ignoring UOL_TENANT / UOL_EMAIL / UOL_TOKEN');
-      const profiles = loadProfiles(profilesFile, env, warnings);
+    if (profilesFile || accountList) {
+      if (profilesFile && accountList) throw new ConfigError('Set either UOL_ACCOUNTS or UOL_PROFILES_FILE, not both');
+      const source = accountList ? 'UOL_ACCOUNTS' : 'UOL_PROFILES_FILE';
+      if (tenant || email || token) warnings.push(`${source} is set; ignoring UOL_TENANT / UOL_EMAIL / UOL_TOKEN`);
+      const profiles = accountList ? accountsFromEnv(accountList, env) : loadProfiles(profilesFile!, env, warnings);
       config.accounts = profiles.accounts;
       config.defaultAccount = profiles.defaultAccount;
       config.credentials = profiles.accounts.find((a) => a.name === profiles.defaultAccount)!.credentials;
@@ -194,13 +197,55 @@ function credentialsFor(
   pairName: string,
 ): UolCredentials {
   if (!tenant) throw new ConfigError(`${tenantName} is missing`);
-  const { baseUrl, isDemo } = resolveTenant(tenant);
+  const { baseUrl, isDemo } = resolveTenant(tenant, tenantName);
   if (isDemo && !email && !token) return { baseUrl, email: DEMO.email, token: DEMO.token, isDemo };
   if (!email || !token) throw new ConfigError(`${pairName} must both be set`);
   return { baseUrl, email, token, isDemo };
 }
 
 const ACCOUNT_NAME = /^[a-z0-9][a-z0-9_-]{0,39}$/;
+
+/**
+ * Several tenants straight from the environment — for hosts whose config is
+ * an env block (Claude Desktop), and so `op run` can resolve each token from
+ * an `op://` reference:
+ *
+ * ```
+ * UOL_ACCOUNTS=firma,novak          (first one is the default, or UOL_DEFAULT_ACCOUNT)
+ * UOL_ACCOUNT_FIRMA_TENANT=firma
+ * UOL_ACCOUNT_FIRMA_EMAIL=ja@firma.cz
+ * UOL_ACCOUNT_FIRMA_TOKEN=op://…
+ * UOL_ACCOUNT_FIRMA_LABEL=Firma s.r.o.   (optional)
+ * ```
+ *
+ * The variable prefix is the account name upper-cased, with `-` as `_`.
+ */
+export function accountsFromEnv(list: string, env: NodeJS.ProcessEnv): { accounts: Account[]; defaultAccount: string } {
+  const names = list
+    .split(',')
+    .map((n) => n.trim().toLowerCase())
+    .filter(Boolean);
+  if (names.length === 0) throw new ConfigError('UOL_ACCOUNTS lists no account');
+  const accounts = names.map((name) => {
+    if (!ACCOUNT_NAME.test(name)) {
+      throw new ConfigError(`UOL_ACCOUNTS: account name "${name}" must be lowercase letters, digits, - or _`);
+    }
+    const prefix = `UOL_ACCOUNT_${name.toUpperCase().replace(/-/g, '_')}_`;
+    const credentials = credentialsFor(
+      value(env[`${prefix}TENANT`]),
+      value(env[`${prefix}EMAIL`]),
+      value(env[`${prefix}TOKEN`]),
+      `${prefix}TENANT`,
+      `${prefix}EMAIL and ${prefix}TOKEN`,
+    );
+    return { name, label: value(env[`${prefix}LABEL`]), credentials };
+  });
+  const defaultAccount = value(env.UOL_DEFAULT_ACCOUNT)?.toLowerCase() ?? names[0]!;
+  if (!names.includes(defaultAccount)) {
+    throw new ConfigError(`UOL_DEFAULT_ACCOUNT "${defaultAccount}" is not listed in UOL_ACCOUNTS`);
+  }
+  return { accounts, defaultAccount };
+}
 
 /**
  * Reads UOL_PROFILES_FILE — several tenants for accountants:
@@ -257,5 +302,6 @@ export function loadProfiles(
 
 export const SETUP_HINT =
   'Set UOL_TENANT (e.g. "firma" for https://firma.ucetnictvi.uol.cz, or "demo"), ' +
-  'UOL_EMAIL and UOL_TOKEN (create the token on your tenant at /api_tokens). ' +
+  'UOL_EMAIL and UOL_TOKEN, or UOL_ACCOUNTS with UOL_ACCOUNT_<NAME>_TENANT / _EMAIL / _TOKEN ' +
+  'for several companies (create the token on your tenant at /api_tokens). ' +
   'The UOL user needs the "REST API" permission.';
