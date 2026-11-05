@@ -21,6 +21,11 @@ old period), say so and recommend asking the accountant.
 - **Unreliable payer (nespolehlivý plátce).** Paying a supplier who is flagged, or to an account not
   published in the VAT register, can make the payer liable for the supplier's VAT. `search_contacts`
   returns the flag.
+- **Unpublished bank account.** A VAT payer's customer is liable for the VAT if they pay more than
+  540 000 Kč (twice the 270 000 Kč cash-payment limit) to an account the supplier hasn't published in the
+  VAT register (§ 109 ZDPH), so larger customers check it. UOL marks own bank accounts with
+  `officially_published` (not in the API spec; it appears to mean exactly this). When it is false and an
+  invoice is that large, say so and suggest publishing the account (a change notice to the tax office).
 - **Deadlines.** VAT return, payment and kontrolní hlášení: the 25th of the month after the period.
   Income tax and annual accounts follow different dates — don't guess them.
 - **Rates.** 21 % standard, 12 % reduced (since 2024). Take the rate from history or the product; ask

@@ -267,6 +267,30 @@ describe('get_business_snapshot', () => {
   });
 });
 
+describe('snapshot of a tenant whose last two months are not booked', () => {
+  it('still says how far the books go', async () => {
+    // arrange
+    const { fetch } = fakeUolFetch();
+    const twoEmptyMonths: typeof fetch = async (input, init) => {
+      const url = new URL(String(input));
+      // The snapshot's own window starts on 1 October; the lookback starts earlier and sees the postings.
+      return url.pathname.endsWith('/accounting_records') && url.searchParams.get('date_from') === '2026-10-01'
+        ? Response.json({ _meta: { pagination: {} }, items: [] })
+        : fetch(input, init);
+    };
+    client = await connect(demoConfig(tmpdir()), twoEmptyMonths);
+
+    // act
+    const result = await client.callTool({ name: 'get_business_snapshot', arguments: {} });
+
+    // assert
+    const data = result.structuredContent as Json;
+    expect(data.this_month).toMatchObject({ month: '2026-11', booked: false });
+    expect(data.previous_month).toMatchObject({ month: '2026-10', booked: false });
+    expect(data.booked_through).toMatch(/^2026-\d{2}-\d{2}$/);
+  });
+});
+
 describe('tenants without internal documents', () => {
   it('estimates every VAT period from invoices instead of failing', async () => {
     // arrange

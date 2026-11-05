@@ -160,6 +160,7 @@ export function registerInvoiceTools(server: McpServer, ctx: ToolContext): void 
       description:
         'Search issued (sales) invoices — vydané faktury — newest first. Each row includes payment status from UOL receivables. ' +
         'Use tax_date_* (DUZP) for accounting-period questions, issue_date_* for "issued in". ' +
+        'Drafts and cancelled invoices are listed too; check status. ' +
         'For "who owes me money" prefer list_receivables.',
       input: z.object({
         query: z.string().optional().describe('Full-text: invoice number, buyer name or text'),
