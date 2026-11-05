@@ -5,6 +5,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.4.3] — 2026-11-05
+
 ### Changed
 
 - The checks live in one reusable workflow (`checks.yml`). A release no longer re-runs them: it
@@ -70,7 +72,8 @@ First public release (0.1–0.3 were internal milestones).
 - Distribution: npm, GHCR image (amd64 / arm64), Claude Desktop extension (`.mcpb`), MCP Registry
   (`eu.humblecode/uol`).
 
-[Unreleased]: https://github.com/jakubbegera/uol-mcp/compare/v0.4.2...HEAD
+[Unreleased]: https://github.com/jakubbegera/uol-mcp/compare/v0.4.3...HEAD
+[0.4.3]: https://github.com/jakubbegera/uol-mcp/compare/v0.4.2...v0.4.3
 [0.4.2]: https://github.com/jakubbegera/uol-mcp/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/jakubbegera/uol-mcp/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/jakubbegera/uol-mcp/releases/tag/v0.4.0
