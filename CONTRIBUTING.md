@@ -27,6 +27,9 @@ npm test
 don't need an account to try things. `npm run smoke` calls every tool against the live DEMO tenant
 (mind the shared rate limit).
 
+Coding agents (and anyone who likes a checklist) will find the project rules condensed in
+[AGENTS.md](AGENTS.md).
+
 ## Rules of the road
 
 - **Never commit real accounting data.** Tests replay responses recorded from the public DEMO tenant
