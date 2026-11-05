@@ -94,7 +94,8 @@ jobs:
   # A pushed tag alone ships nothing: the release environment needs a reviewer's approval.
   approve:
     needs: [verify, ci-result, checks]
-    # checks is skipped when CI already passed; this still runs unless something failed.
+    # checks is skipped when CI already passed, and a skipped job anywhere upstream would skip this
+    # one too (success() looks at every earlier job); run unless something failed or was cancelled.
     if: ${{ !failure() && !cancelled() }}
     runs-on: ubuntu-latest
     environment: release
@@ -105,6 +106,9 @@ jobs:
 
   npm:
     needs: [verify, approve]
+    # checks is skipped when CI already passed, and a skipped job anywhere upstream would skip this
+    # one too (success() looks at every earlier job); run unless something failed or was cancelled.
+    if: ${{ !failure() && !cancelled() }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -136,6 +140,9 @@ jobs:
 
   image:
     needs: [verify, approve]
+    # checks is skipped when CI already passed, and a skipped job anywhere upstream would skip this
+    # one too (success() looks at every earlier job); run unless something failed or was cancelled.
+    if: ${{ !failure() && !cancelled() }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -191,6 +198,9 @@ jobs:
 
   github-release:
     needs: [verify, approve, bundle]
+    # checks is skipped when CI already passed, and a skipped job anywhere upstream would skip this
+    # one too (success() looks at every earlier job); run unless something failed or was cancelled.
+    if: ${{ !failure() && !cancelled() }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -208,6 +218,9 @@ jobs:
 
   registry:
     needs: [verify, npm, image, bundle, github-release]
+    # checks is skipped when CI already passed, and a skipped job anywhere upstream would skip this
+    # one too (success() looks at every earlier job); run unless something failed or was cancelled.
+    if: ${{ !failure() && !cancelled() }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

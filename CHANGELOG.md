@@ -13,6 +13,11 @@ and the project uses [Semantic Versioning](https://semver.org/).
   requires the tagged commit to be on `main` with a passing CI run, and runs the checks itself only
   when no CI result exists.
 
+### Fixed
+
+- Publishing jobs no longer get skipped when the release reuses the CI result (a skipped job
+  upstream skipped everything after it).
+
 ## [0.4.2] — 2026-11-05
 
 ### Changed
