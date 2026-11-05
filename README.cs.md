@@ -12,7 +12,7 @@ vydané a přijaté faktury, kdo vám dluží, nahrané doklady, kontakty.
 Tohle je zkrácená příručka. Kompletní dokumentace — všechny tools, další klienty, Docker, HTTP server
 a všechny proměnné prostředí — je v [anglickém README](README.md).
 
-**Stav:** verze 0.4, ve výchozím stavu pouze čtení, zápis lze zapnout. Změny jednotlivých verzí
+**Stav:** verze 0.5, ve výchozím stavu pouze čtení, zápis lze zapnout. Změny jednotlivých verzí
 popisuje [CHANGELOG.md](CHANGELOG.md).
 
 ## Co umí
