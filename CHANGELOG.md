@@ -5,6 +5,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.4.2] — 2026-11-05
+
 ### Changed
 
 - The Docker image runs on Node.js 26 (LTS); CI tests every supported line (22, 24, 26).
@@ -62,6 +64,7 @@ First public release (0.1–0.3 were internal milestones).
 - Distribution: npm, GHCR image (amd64 / arm64), Claude Desktop extension (`.mcpb`), MCP Registry
   (`eu.humblecode/uol`).
 
-[Unreleased]: https://github.com/jakubbegera/uol-mcp/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/jakubbegera/uol-mcp/compare/v0.4.2...HEAD
+[0.4.2]: https://github.com/jakubbegera/uol-mcp/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/jakubbegera/uol-mcp/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/jakubbegera/uol-mcp/releases/tag/v0.4.0
