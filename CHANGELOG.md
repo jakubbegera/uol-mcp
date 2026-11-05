@@ -5,6 +5,12 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- The checks live in one reusable workflow (`checks.yml`). A release no longer re-runs them: it
+  requires the tagged commit to be on `main` with a passing CI run, and runs the checks itself only
+  when no CI result exists.
+
 ## [0.4.2] — 2026-11-05
 
 ### Changed

@@ -21,16 +21,14 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version-file: .nvmrc
-          cache: npm
       - id: version
         name: Tag must match package.json and server.json
         run: |
@@ -38,14 +36,66 @@ jobs:
           test "$(node -p 'require("./package.json").version')" = "$version"
           test "$(node -p 'require("./server.json").version')" = "$version"
           echo "version=$version" >> "$GITHUB_OUTPUT"
-      - run: npm ci --ignore-scripts
-      - run: npm run typecheck
-      - run: npm test
-      - run: npm audit --omit=dev --audit-level=high
+      # Only reviewed code ships: the tagged commit must already be on main.
+      - name: Tagged commit must be on main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          status=$(gh api "repos/${GITHUB_REPOSITORY}/compare/main...${GITHUB_SHA}" -q .status)
+          case "$status" in
+            identical|behind) echo "${GITHUB_SHA} is on main" ;;
+            *) echo "${GITHUB_SHA} is not on main (compare status: ${status})" >&2; exit 1 ;;
+          esac
+
+  # The checks already ran when the commit reached main; reuse that result instead of running them
+  # again. A run still in progress is awaited; a failed one stops the release.
+  ci-result:
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+    outputs:
+      status: ${{ steps.ci.outputs.status }}
+    steps:
+      - id: ci
+        name: CI result for the tagged commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for attempt in $(seq 1 40); do
+            runs=$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/ci.yml/runs?head_sha=${GITHUB_SHA}&event=push" \
+              -q '[.workflow_runs[] | {status, conclusion}]')
+            if jq -e 'any(.[]; .conclusion == "success")' <<<"$runs" >/dev/null; then
+              echo "CI passed for ${GITHUB_SHA}"
+              echo "status=success" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            if jq -e 'length > 0 and all(.[]; .status == "completed")' <<<"$runs" >/dev/null; then
+              echo "CI did not pass for ${GITHUB_SHA}; fix main and tag a new commit" >&2
+              exit 1
+            fi
+            # A run appears a few seconds after the push; after a minute without one, run the checks here.
+            if [ "$attempt" -ge 3 ] && jq -e 'length == 0' <<<"$runs" >/dev/null; then
+              echo "No CI run for ${GITHUB_SHA}; the release runs the checks itself"
+              echo "status=missing" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            echo "waiting for CI on ${GITHUB_SHA} (${attempt}/40)"
+            sleep 30
+          done
+          echo "CI for ${GITHUB_SHA} did not finish within 20 minutes" >&2
+          exit 1
+
+  checks:
+    needs: ci-result
+    if: needs.ci-result.outputs.status == 'missing'
+    uses: ./.github/workflows/checks.yml
 
   # A pushed tag alone ships nothing: the release environment needs a reviewer's approval.
   approve:
-    needs: verify
+    needs: [verify, ci-result, checks]
+    # checks is skipped when CI already passed; this still runs unless something failed.
+    if: ${{ !failure() && !cancelled() }}
     runs-on: ubuntu-latest
     environment: release
     steps:

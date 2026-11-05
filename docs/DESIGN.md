@@ -324,7 +324,8 @@ is registered only when the toolset it relies on is enabled)
 **Release pipeline** (GitHub Actions, on tag `v*`):
 
 ```
-verify (tag = package.json = server.json, typecheck, tests, audit)
+verify (tag = package.json = server.json, commit on main)
+  → CI result for the commit (awaited; checks.yml runs only if there is none)
   → approval on the "release" environment
       → npm publish --provenance              (skipped if the version exists)
       → docker buildx (amd64, arm64) → ghcr.io
