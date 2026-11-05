@@ -1,4 +1,5 @@
 import type { RawInternalDocument, RawPurchaseInvoice, RawSalesInvoice, UolClient } from '../uol/client.js';
+import { UolApiError } from '../uol/errors.js';
 import { amount, daysBetween, money, refId, str } from '../uol/normalize.js';
 import { fetchPages } from './paging.js';
 
@@ -68,11 +69,17 @@ export async function vatOverview(
   kind: VatKind,
   count: number,
   today: string,
-): Promise<{ periods: VatFigures[]; truncated: boolean }> {
+): Promise<{ periods: VatFigures[]; truncated: boolean; closing_documents_available: boolean }> {
   const windows = vatWindows(today, kind, count);
   const from = windows[windows.length - 1]!.start;
   const [docs, sales, purchases] = await Promise.all([
-    fetchPages((page, perPage) => client.internalDocuments({ page, per_page: perPage }), MAX_VAT_PAGES),
+    // Some tenants answer 404 on internal documents; without closing documents every period is an estimate.
+    fetchPages((page, perPage) => client.internalDocuments({ page, per_page: perPage }), MAX_VAT_PAGES).catch(
+      (error: unknown) => {
+        if (error instanceof UolApiError && error.status === 404) return undefined;
+        throw error;
+      },
+    ),
     fetchPages(
       (page, perPage) => client.salesInvoices({ tax_payment_date_from: from, page, per_page: perPage }),
       MAX_VAT_PAGES,
@@ -83,7 +90,7 @@ export async function vatOverview(
     ),
   ]);
 
-  const closing = docs.rows.filter((d) => d.status === 'confirmed' && (d.note ?? '').startsWith('DPH '));
+  const closing = (docs?.rows ?? []).filter((d) => d.status === 'confirmed' && (d.note ?? '').startsWith('DPH '));
   const periods = windows.map((w) => {
     const doc = closing.find((d) => inWindow(str(d.date), w));
     const due = ymd(Number(w.endExclusive.slice(0, 4)), Number(w.endExclusive.slice(5, 7)), 25);
@@ -123,7 +130,11 @@ export async function vatOverview(
     };
   });
 
-  return { periods, truncated: docs.truncated || sales.truncated || purchases.truncated };
+  return {
+    periods,
+    truncated: Boolean(docs?.truncated) || sales.truncated || purchases.truncated,
+    closing_documents_available: docs !== undefined,
+  };
 }
 
 function closingTotals(doc: RawInternalDocument): { output: number; input: number } {
