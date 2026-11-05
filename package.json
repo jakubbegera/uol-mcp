@@ -1,6 +1,6 @@
 {
   "name": "uol-mcp",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Unofficial MCP server for the UOL Účetnictví accounting API",
   "license": "MIT",
   "author": "Jakub Begera",
@@ -19,6 +19,7 @@
     "dist",
     "README.md",
     "README.cs.md",
+    "CHANGELOG.md",
     "LICENSE"
   ],
   "engines": {
