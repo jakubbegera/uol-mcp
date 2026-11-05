@@ -5,6 +5,13 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- `issue_invoice` prompt (with `UOL_ACCESS=write` or `full`): builds a sales invoice from a free-text
+  Czech description. It finds the buyer and an existing product for every line, never invents either,
+  shows a dry run with totals and dates, and creates a draft only after you confirm; issuing needs an
+  explicit request. With several accounts it takes the account to use (`ucet`).
+
 ## [0.5.0] — 2026-11-05
 
 ### Added

@@ -270,7 +270,8 @@ Planned: `uol://codebooks/{kind}`, templates `uol://sales-invoices/{id}`,
 `uol://uploaded-documents/{id}/file`.
 
 **Prompts** (Czech, because the text is sent as the user's message; shown as slash commands; a prompt
-is registered only when the toolset it relies on is enabled)
+is registered only when the toolset it relies on is enabled, and a writing prompt only when the write
+tools are registered)
 
 | Prompt | Toolset | Does |
 |---|---|---|
@@ -278,7 +279,7 @@ is registered only when the toolset it relies on is enabled)
 | `vat_check` | insights | VAT for a period, whether it is preliminary, which documents may still change it |
 | `overdue_followup` | core | Overdue receivables grouped by customer, with polite reminder drafts (never sends anything) |
 | `process_inbox` | core | Walks unprocessed uploaded documents and suggests matching purchase invoices |
-| `issue_invoice` | (planned, write) | Builds a sales invoice from free text, shows a dry run, creates it after confirmation |
+| `issue_invoice` | core + write access | Builds a sales invoice from free text: finds the buyer (`search_contacts`) and an existing product for every line (§2 #27), never invents either, runs `create_sales_invoice` as a dry run, shows a summary with totals and dates and waits for confirmation; then creates a draft (issues only on explicit request, reusing the dry run's idempotency key) and offers the PDF. With several accounts it takes `ucet` and passes it on as `account` |
 
 ---
 

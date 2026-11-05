@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { Client } from '@modelcontextprotocol/client';
 import { afterEach, describe, expect, it } from 'vitest';
+import { type AppConfig, loadConfig } from '../src/config.js';
 import { connect, demoConfig, fakeUolFetch } from './support/fake-uol.js';
 
 type Json = Record<string, any>;
@@ -104,6 +105,73 @@ describe('resources and prompts', () => {
     expect((review.messages[0]?.content as { text: string }).text).toContain('měsíc 2026-10');
     expect((followup.messages[0]?.content as { text: string }).text).toContain('víc než 14 dní');
     expect((followup.messages[0]?.content as { text: string }).text).toContain('Nic neodesílej');
+  });
+});
+
+describe('issue_invoice prompt', () => {
+  const ZADANI = 'Faktura pro ACME s.r.o. (IČO 12345678): 10 hodin konzultací po 1500 Kč bez DPH, splatnost 14 dní';
+  const textOf = (prompt: { messages: { content: unknown }[] }) => (prompt.messages[0]?.content as { text: string }).text;
+
+  it.each<[string, Partial<AppConfig>, boolean]>([
+    ['read access', { access: 'read' }, false],
+    ['write access', { access: 'write' }, true],
+    ['full access', { access: 'full' }, true],
+    ['write access but no core toolset', { access: 'write', toolsets: new Set(['insights']) }, false],
+  ])('is listed only when it can write: %s', async (_case, overrides, listed) => {
+    // arrange
+    client = await connect(demoConfig(tmpdir(), overrides));
+
+    // act
+    const { prompts } = await client.listPrompts();
+
+    // assert
+    expect(prompts.some((p) => p.name === 'issue_invoice')).toBe(listed);
+  });
+
+  it("renders the user's description with a dry run first and a draft by default", async () => {
+    // arrange
+    client = await connect(demoConfig(tmpdir(), { access: 'write' }));
+
+    // act
+    const { prompts } = await client.listPrompts();
+    const prompt = await client.getPrompt({ name: 'issue_invoice', arguments: { zadani: ZADANI } });
+
+    // assert
+    expect(prompts.find((p) => p.name === 'issue_invoice')?.arguments).toEqual([
+      expect.objectContaining({ name: 'zadani', required: true }),
+    ]);
+    const text = textOf(prompt);
+    expect(text).toContain(ZADANI);
+    expect(text).toContain('dry_run: true');
+    expect(text).toContain('koncept (issue: false)');
+    expect(text).toContain('product_id nikdy nevymýšlej');
+    expect(text).not.toContain('account:');
+  });
+
+  it('passes the chosen account on to the tools when several accounts are configured', async () => {
+    // arrange
+    const config = loadConfig({
+      UOL_ACCESS: 'write',
+      UOL_ACCOUNTS: 'hc,jb',
+      UOL_ACCOUNT_HC_TENANT: 'demo',
+      UOL_ACCOUNT_JB_TENANT: 'demo',
+      UOL_DOWNLOAD_DIR: tmpdir(),
+    });
+    client = await connect(config);
+
+    // act
+    const { prompts } = await client.listPrompts();
+    const chosen = await client.getPrompt({ name: 'issue_invoice', arguments: { zadani: ZADANI, ucet: 'jb' } });
+    const byDefault = await client.getPrompt({ name: 'issue_invoice', arguments: { zadani: ZADANI } });
+
+    // assert
+    expect(prompts.find((p) => p.name === 'issue_invoice')?.arguments).toEqual([
+      expect.objectContaining({ name: 'zadani', required: true }),
+      expect.objectContaining({ name: 'ucet', required: false }),
+    ]);
+    expect(textOf(chosen)).toContain('account: "jb"');
+    expect(textOf(byDefault)).toContain('výchozím účtu');
+    expect(textOf(byDefault)).not.toContain('account: "');
   });
 });
 

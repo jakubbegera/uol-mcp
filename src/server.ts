@@ -105,13 +105,14 @@ export function createServer(ctx: ToolContext): McpServer {
   if (toolsets.has('warehouse')) registerWarehouseTools(server, ctx);
   // Registered for the highest level any account has; each call checks its own account's level.
   const access = highestAccess(ctx.config);
-  if (access === 'write' || access === 'full') {
+  const writes = access === 'write' || access === 'full';
+  if (writes) {
     registerWriteTools(server, ctx);
     registerRecordWriteTools(server, ctx);
     registerDocumentWriteTools(server, ctx);
   }
   if (access === 'full') registerDestructiveTools(server, ctx);
   registerResources(server, ctx);
-  registerPrompts(server, toolsets);
+  registerPrompts(server, { toolsets, writes, accounts: (ctx.config.accounts ?? []).map((a) => a.name) });
   return server;
 }
