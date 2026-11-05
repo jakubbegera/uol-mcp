@@ -57,9 +57,20 @@ const scrubContact = (node) => {
       if (node[key] != null) node[key] = null;
     }
     if (node.specific_symbol != null) node.specific_symbol = null;
-    for (const a of node.addresses ?? []) {
-      Object.assign(a, { street: 'Testovací 1', building_number: null, email: null, phone: null, mobile_phone: null, url: null });
-    }
+    // The address slug spells out the real street, so it goes too.
+    (node.addresses ?? []).forEach((a, i) => {
+      Object.assign(a, {
+        address_id: `${idMap.get(node.contact_id)}_address_${i + 1}`,
+        street: 'Testovací 1',
+        building_number: null,
+        city: 'Testov',
+        postal_code: '000 00',
+        email: null,
+        phone: null,
+        mobile_phone: null,
+        url: null,
+      });
+    });
     for (const b of node.bank_accounts ?? []) {
       Object.assign(b, { bank_account: '0000000000/0000', iban: 'CZ0000000000000000000000', name: null });
     }

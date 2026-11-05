@@ -11,3 +11,4 @@ scripts
 README-internal.md
 .env
 .env.*
+*.pem

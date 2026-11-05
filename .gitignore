@@ -10,3 +10,6 @@ coverage/
 README-internal.md
 build/
 *.mcpb
+
+# Signing keys (e.g. the MCP Registry DNS key) stay local
+*.pem
