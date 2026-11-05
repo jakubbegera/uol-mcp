@@ -5,7 +5,9 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-## [0.4.3] — 2026-11-05
+## [0.4.4] — 2026-11-05
+
+0.4.3 was tagged but never published: its release run skipped every publishing job (fixed below).
 
 ### Changed
 
@@ -77,8 +79,8 @@ First public release (0.1–0.3 were internal milestones).
 - Distribution: npm, GHCR image (amd64 / arm64), Claude Desktop extension (`.mcpb`), MCP Registry
   (`eu.humblecode/uol`).
 
-[Unreleased]: https://github.com/jakubbegera/uol-mcp/compare/v0.4.3...HEAD
-[0.4.3]: https://github.com/jakubbegera/uol-mcp/compare/v0.4.2...v0.4.3
+[Unreleased]: https://github.com/jakubbegera/uol-mcp/compare/v0.4.4...HEAD
+[0.4.4]: https://github.com/jakubbegera/uol-mcp/compare/v0.4.2...v0.4.4
 [0.4.2]: https://github.com/jakubbegera/uol-mcp/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/jakubbegera/uol-mcp/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/jakubbegera/uol-mcp/releases/tag/v0.4.0
