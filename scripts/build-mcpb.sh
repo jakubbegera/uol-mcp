@@ -25,6 +25,6 @@ node -e '
 (cd "$STAGE" && npm ci --omit=dev --ignore-scripts --no-audit --no-fund --silent)
 rm "$STAGE/package-lock.json"
 
-npx -y @anthropic-ai/mcpb@2.1.2 validate "$STAGE/manifest.json"
-npx -y @anthropic-ai/mcpb@2.1.2 pack "$STAGE" "$OUT"
+npx --no-install mcpb validate "$STAGE/manifest.json"
+npx --no-install mcpb pack "$STAGE" "$OUT"
 echo "sha256 $(shasum -a 256 "$OUT" | cut -d' ' -f1)"

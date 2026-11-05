@@ -2,7 +2,7 @@
 # The build output is plain JavaScript with no native modules, so it is compiled once on the
 # runner's own platform; only the small runtime stage is assembled per target platform
 # (a multi-arch build would otherwise run npm ci and tsc under QEMU emulation).
-FROM --platform=$BUILDPLATFORM node:22-alpine AS build
+FROM --platform=$BUILDPLATFORM node:22-alpine@sha256:fe4f6d74e20370acb04ad889077d14d0f64a9c8ea6a42bc60cddf1e844699914 AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --ignore-scripts
@@ -10,7 +10,7 @@ COPY tsconfig.json tsconfig.build.json ./
 COPY src ./src
 RUN npm run build && npm prune --omit=dev
 
-FROM node:22-alpine
+FROM node:22-alpine@sha256:fe4f6d74e20370acb04ad889077d14d0f64a9c8ea6a42bc60cddf1e844699914
 # Ownership proof for the official MCP Registry (must equal server.json "name").
 LABEL io.modelcontextprotocol.server.name="eu.humblecode/uol"
 LABEL org.opencontainers.image.title="uol-mcp" \
