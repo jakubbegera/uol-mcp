@@ -140,6 +140,7 @@ describe('get_bank_balances', () => {
     expect(data.accounts).toHaveLength(3);
     expect(data.history.map((h: Json) => h.as_of)).toEqual(['2026-11-01', '2026-11-01', '2026-10-01', '2026-10-01']);
     expect(data.note).toMatch(/snapshots/);
+    expect(data.truncated).toBe(false);
   });
 });
 
@@ -151,6 +152,7 @@ describe('get_business_snapshot', () => {
     // assert
     expect(result.isError).toBeFalsy();
     expect(data.errors).toEqual([]);
+    expect(data.incomplete).toEqual([]);
     expect(data.company).toEqual({ name: 'DEMO, s. r. o.', vat_period: 'quarterly' });
     expect(data.this_month).toEqual({ month: '2026-11', revenue: -3000, expenses: -500, profit: -2500 });
     expect(data.previous_month.month).toBe('2026-10');
@@ -179,5 +181,26 @@ describe('get_business_snapshot', () => {
     expect(data.bank).toBeNull();
     expect(data.errors).toEqual([{ section: 'bank', message: expect.stringMatching(/0002/) }]);
     expect(data.company).not.toBeNull();
+  });
+
+  it('lists a section as incomplete when UOL has more pages than one call reads', async () => {
+    // arrange
+    const { fetch } = fakeUolFetch();
+    const endlessBank: typeof fetch = async (input, init) =>
+      String(input).includes('/bank_balances')
+        ? new Response(
+            JSON.stringify({ items: [], _meta: { pagination: { next: 'https://test.demo.uol.cz/api/v1/bank_balances?page=99' } } }),
+            { status: 200, headers: { 'content-type': 'application/json' } },
+          )
+        : fetch(input, init);
+    client = await connect(demoConfig(tmpdir()), endlessBank);
+
+    // act
+    const result = await client.callTool({ name: 'get_business_snapshot', arguments: {} });
+
+    // assert
+    const data = result.structuredContent as Json;
+    expect(data.errors).toEqual([]);
+    expect(data.incomplete).toEqual(['bank']);
   });
 });

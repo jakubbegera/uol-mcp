@@ -189,10 +189,11 @@ export function registerInsightTools(server: McpServer, ctx: ToolContext): void 
         by_currency: z.array(currencyBalance),
         history: z.array(accountBalance).nullable(),
         note: z.string(),
+        truncated: z.boolean().describe('True when UOL had more snapshots than one call reads'),
       }),
     },
     async ({ history }, { client }) => {
-      const { rows } = await fetchPages((page, perPage) => client.bankBalances({ page, per_page: perPage }), 8);
+      const { rows, truncated } = await fetchPages((page, perPage) => client.bankBalances({ page, per_page: perPage }), 8);
       const accounts = latestBalances(rows);
       const snapshots = history
         ? rows
@@ -201,7 +202,9 @@ export function registerInsightTools(server: McpServer, ctx: ToolContext): void 
             .sort((a, b) => b.as_of.localeCompare(a.as_of))
             .slice(0, 120)
         : null;
-      return { data: { accounts, by_currency: balancesByCurrency(accounts), history: snapshots, note: BANK_NOTE } };
+      return {
+        data: { accounts, by_currency: balancesByCurrency(accounts), history: snapshots, note: BANK_NOTE, truncated },
+      };
     },
   );
 
@@ -214,7 +217,8 @@ export function registerInsightTools(server: McpServer, ctx: ToolContext): void 
       description:
         '"How is the company doing?" in one call: this month vs last month (revenue, expenses, profit), the current VAT period, ' +
         'unpaid and overdue receivables, uploaded documents waiting for the accountant, and bank balances. ' +
-        'Sections that fail (e.g. missing permission) are null and listed in errors. Use the dedicated tools for detail.',
+        'Sections that fail (e.g. missing permission) are null and listed in errors; sections read only partly are listed in ' +
+        'incomplete. Use the dedicated tools for detail.',
       input: z.object({}),
       output: z.object({
         as_of: z.string(),
@@ -231,11 +235,18 @@ export function registerInsightTools(server: McpServer, ctx: ToolContext): void 
         documents_to_process: z.number().nullable().describe('Uploaded documents in state unprocessed'),
         bank: z.array(currencyBalance).nullable().describe(BANK_NOTE),
         errors: z.array(z.object({ section: z.string(), message: z.string() })),
+        incomplete: z
+          .array(z.string())
+          .describe('Sections where UOL had more rows than one call reads; their figures may be too low'),
       }),
     },
     async (_args, { client, contacts }) => {
       const today = pragueDate(ctx.now());
       const errors: { section: string; message: string }[] = [];
+      const incomplete: string[] = [];
+      const flag = (section: string, truncated: boolean) => {
+        if (truncated) incomplete.push(section);
+      };
       const attempt = async <T>(section: string, run: () => Promise<T>): Promise<T | null> => {
         try {
           return await run();
@@ -247,9 +258,14 @@ export function registerInsightTools(server: McpServer, ctx: ToolContext): void 
 
       const [companyInfo, ledger, receivables, documents, bank] = await Promise.all([
         attempt('company', () => companyVatKind(client)),
-        attempt('financials', () => ledgerSummary(client, monthKeys(today, 2), today)),
+        attempt('financials', async () => {
+          const summary = await ledgerSummary(client, monthKeys(today, 2), today);
+          flag('financials', summary.truncated);
+          return summary;
+        }),
         attempt('receivables', async () => {
-          const { rows } = await fetchAllReceivables(client, { state: 'unpaid' });
+          const { rows, truncated } = await fetchAllReceivables(client, { state: 'unpaid' });
+          flag('receivables', truncated);
           const open = rows.filter((r) => !r.cancelled).map((r) => receivableRow(r, today));
           const mostOverdue = open
             .filter((r) => r.days_overdue > 0)
@@ -265,14 +281,19 @@ export function registerInsightTools(server: McpServer, ctx: ToolContext): void 
           return items === 0 ? 0 : (pageInfo(body, 1, 1).total_pages ?? items);
         }),
         attempt('bank', async () => {
-          const { rows } = await fetchPages((page, perPage) => client.bankBalances({ page, per_page: perPage }), 8);
+          const { rows, truncated } = await fetchPages((page, perPage) => client.bankBalances({ page, per_page: perPage }), 8);
+          flag('bank', truncated);
           return balancesByCurrency(latestBalances(rows));
         }),
       ]);
 
       const vat =
         companyInfo && companyInfo.period !== 'not_vat_payer'
-          ? await attempt('vat', async () => (await vatOverview(client, companyInfo.period as VatKind, 1, today)).periods[0] ?? null)
+          ? await attempt('vat', async () => {
+              const overview = await vatOverview(client, companyInfo.period as VatKind, 1, today);
+              flag('vat', overview.truncated);
+              return overview.periods[0] ?? null;
+            })
           : null;
 
       return {
@@ -286,6 +307,7 @@ export function registerInsightTools(server: McpServer, ctx: ToolContext): void 
           documents_to_process: documents,
           bank: bank && bank.length > 0 ? bank : null,
           errors,
+          incomplete,
         },
       };
     },
