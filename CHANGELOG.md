@@ -5,6 +5,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.6.0] — 2026-11-05
+
 ### Added
 
 - `issue_invoice` prompt (with `UOL_ACCESS=write` or `full`): builds a sales invoice from a free-text
@@ -131,7 +133,8 @@ First public release (0.1–0.3 were internal milestones).
 - Distribution: npm, GHCR image (amd64 / arm64), Claude Desktop extension (`.mcpb`), MCP Registry
   (`eu.humblecode/uol`).
 
-[Unreleased]: https://github.com/jakubbegera/uol-mcp/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/jakubbegera/uol-mcp/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/jakubbegera/uol-mcp/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/jakubbegera/uol-mcp/compare/v0.4.4...v0.5.0
 [0.4.4]: https://github.com/jakubbegera/uol-mcp/compare/v0.4.2...v0.4.4
 [0.4.2]: https://github.com/jakubbegera/uol-mcp/compare/v0.4.1...v0.4.2

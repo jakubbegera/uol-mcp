@@ -9,7 +9,7 @@ bookkeeping: issued and received invoices, who owes you money, uploaded document
 
 [Česky](README.cs.md)
 
-**Status:** v0.5 — read-only by default, opt-in writes. What changed: [CHANGELOG.md](CHANGELOG.md).
+**Status:** v0.6 — read-only by default, opt-in writes. What changed: [CHANGELOG.md](CHANGELOG.md).
 
 ## What it can do
 
