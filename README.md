@@ -68,7 +68,7 @@ Want to try it first? `UOL_TENANT=demo` uses UOL's public DEMO company, no token
 | `UOL_TOOLSETS` | Comma-separated: `core`, `insights` (these two are the default), `ledger`, `banking`, `warehouse`, or `all` |
 | `UOL_ACCESS` | `read` (default), `write` or `full` — see [Writing](#writing-opt-in) |
 | `UOL_PROFILES_FILE` | Several companies in one server — see [Several companies](#several-companies) |
-| `UOL_UPLOAD_DIRS` | Folders `upload_document` may read from (default `~/Downloads`, `~/Desktop`, `~/Documents`; `:`-separated, `;` on Windows) |
+| `UOL_UPLOAD_DIRS` | Folders `upload_document` may read from (default `~/Downloads`, `~/Desktop`, `~/Documents`; `:`-separated, `;` on Windows). The HTTP server has no default: without this variable it accepts only `content_base64` |
 | `UOL_AUDIT_LOG` | File that records every write as a JSON line |
 | `UOL_DEBUG` | `1` logs requests to stderr (never credentials) |
 
@@ -223,7 +223,7 @@ its own rate limit.
 - Whatever the tools return goes to the AI model your client uses. Accounting data contains personal
   data of your contacts and employees — use a plan whose terms you are comfortable with.
 - Credentials are used only for `https://*.uol.cz` and are never written to logs or tool output.
-- Downloaded files are saved under `UOL_DOWNLOAD_DIR` only.
+- Downloaded files are saved under `UOL_DOWNLOAD_DIR` only, readable by the owner, and never replace an existing file (a taken name gets a ` (1)` suffix).
 
 ## From source
 

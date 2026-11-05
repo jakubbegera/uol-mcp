@@ -1,3 +1,4 @@
+import { InputError } from '../domain/uploads.js';
 import type { BinaryResponse, Query, UolHttp } from './http.js';
 import type { Href, PaginationMeta } from './normalize.js';
 
@@ -197,7 +198,18 @@ export interface RawBankBalance {
   locked?: boolean | null;
 }
 
-const id = (value: string | number) => encodeURIComponent(String(value));
+/**
+ * Path segment for an id. UOL ids are numbers or ASCII slugs; anything else — `..`, `/`, `?` —
+ * could point a request at a different endpoint (an untag turning into a delete), so it is
+ * refused before anything is sent.
+ */
+const id = (value: string | number) => {
+  const text = String(value);
+  if (!/^[A-Za-z0-9][A-Za-z0-9_.-]{0,199}$/.test(text)) {
+    throw new InputError(`Not a valid UOL id: ${JSON.stringify(text.slice(0, 80))}`);
+  }
+  return text;
+};
 
 /** One method per UOL endpoint the tools use. */
 export class UolClient {

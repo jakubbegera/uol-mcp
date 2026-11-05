@@ -46,6 +46,20 @@ function postWithHost(url: string, host: string): Promise<number> {
 }
 
 describe('pass-through mode', () => {
+  it('reads no files from the server disk unless UOL_UPLOAD_DIRS is set', async () => {
+    // arrange
+    const { url, requests } = await start(loadConfig({ UOL_ACCESS: 'write' }));
+    const mcp = await connect(url, { 'X-UOL-Tenant': 'demo' });
+
+    // act
+    const result = await mcp.callTool({ name: 'upload_document', arguments: { file_path: '~/Documents/x.pdf' } });
+
+    // assert
+    expect(result.isError).toBe(true);
+    expect(JSON.stringify(result.content)).toMatch(/content_base64/);
+    expect(requests).toEqual([]);
+  });
+
   it('serves tools with credentials from the request headers and embeds files', async () => {
     // arrange
     const { url, requests } = await start(loadConfig({}));

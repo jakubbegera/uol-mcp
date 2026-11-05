@@ -125,7 +125,7 @@ Desktop — the two paths that reach non-developers.
 | `UOL_DEBUG` | off | Request log on stderr (path, status, duration; never credentials) | 0.1 |
 | `UOL_ACCESS` | `read` | `read` · `write` (adds upload / create / update) · `full` (same as write for now; will add destructive tools and generic writes) | 0.3 |
 | `UOL_TOOLSETS` | `core,insights` | Tool groups to register (§4): `core`, `insights`, `ledger`, `banking`, `warehouse`, or `all`. Unknown names are reported on stderr. | 0.2 |
-| `UOL_UPLOAD_DIRS` | `~/Downloads:~/Desktop:~/Documents` | Directories `upload_document` may read from | 0.3 |
+| `UOL_UPLOAD_DIRS` | `~/Downloads:~/Desktop:~/Documents` (stdio); none over HTTP | Directories `upload_document` may read from; over HTTP, `file_path` is off unless this is set | 0.3 |
 | `UOL_AUDIT_LOG` | — | JSONL file recording every write (tool, endpoint, payload hash, result id) | 0.3 |
 | `UOL_ACCOUNTS` | — | Several tenants from the environment: `a,b` plus `UOL_ACCOUNT_<NAME>_TENANT`, `_EMAIL`, `_TOKEN`, `_LABEL` (name upper-cased, `-` → `_`); `UOL_DEFAULT_ACCOUNT` or the first is the default. Fits hosts whose config is an env block, and `op run` resolving each token from an `op://` reference. Same tools as with a profiles file. | 0.4 |
 | `UOL_PROFILES_FILE` | — | JSON with several tenants (`accounts`, `default`; per account `tenant`, `email`, `token` or `token_env`, `label`). Adds `list_accounts` and, with more than one account, an `account` argument to every tool; each account keeps its own rate limiter. Replaces `UOL_TENANT`/`UOL_EMAIL`/`UOL_TOKEN`. A file with inline tokens that others can read is reported. | 0.4 |

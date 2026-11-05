@@ -244,6 +244,21 @@ describe('uploaded document workflow', () => {
       'DELETE /api/v1/uploaded_documents/4/tags/5',
     ]);
   });
+
+  it('refuses ids that would leave their path segment', async () => {
+    // arrange
+    const { call, writes } = await setup();
+
+    // act
+    const dotDot = await call('untag_uploaded_document', { document_id: '4', tag_id: '..' });
+    const slash = await call('untag_uploaded_document', { document_id: '4/../5', tag_id: '1' });
+
+    // assert
+    expect(dotDot.result.isError).toBe(true);
+    expect(dotDot.text).toMatch(/Not a valid UOL id/);
+    expect(slash.result.isError).toBe(true);
+    expect(writes()).toEqual([]);
+  });
 });
 
 describe('destructive tools (UOL_ACCESS=full)', () => {

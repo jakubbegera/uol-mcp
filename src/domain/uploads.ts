@@ -23,6 +23,9 @@ function expandHome(path: string): string {
  * could ship arbitrary local files into the accounting system.
  */
 export async function readUploadFile(filePath: string, allowedDirs: string[]): Promise<UploadFile> {
+  if (allowedDirs.length === 0) {
+    throw new InputError('This server takes no file paths; send the file as content_base64 instead.');
+  }
   const expanded = expandHome(filePath.trim());
   if (!isAbsolute(expanded)) throw new InputError('file_path must be an absolute path (or start with ~/).');
 

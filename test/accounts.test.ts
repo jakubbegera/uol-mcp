@@ -29,6 +29,20 @@ const TWO_ACCOUNTS = {
 };
 
 describe('UOL_PROFILES_FILE', () => {
+  it('reports invalid JSON without quoting the file, which may hold a token', () => {
+    // arrange
+    const dir = mkdtempSync(join(tmpdir(), 'uol-mcp-profiles-'));
+    const file = join(dir, 'profiles.json');
+    writeFileSync(file, '{"accounts":{"a":{"tenant":"firma","email":"x@y.cz","token":SECRETTOKEN}}}');
+
+    // act
+    const config = loadConfig({ UOL_PROFILES_FILE: file });
+
+    // assert
+    expect(config.configError).toMatch(/is not valid JSON/);
+    expect(config.configError).not.toMatch(/SECRET/);
+  });
+
   it('loads accounts, resolves token_env and picks the default', () => {
     // act
     const config = loadConfig({ UOL_PROFILES_FILE: profiles(TWO_ACCOUNTS), UOL_TOKEN_FIRMA: 'secret' });

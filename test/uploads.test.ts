@@ -16,6 +16,18 @@ function folders() {
 }
 
 describe('readUploadFile', () => {
+  it('takes no file paths when no folder is allowed', async () => {
+    // arrange
+    const { allowed } = folders();
+    writeFileSync(join(allowed, 'a.pdf'), PDF);
+
+    // act
+    const read = readUploadFile(join(allowed, 'a.pdf'), []);
+
+    // assert
+    await expect(read).rejects.toThrow(/content_base64/);
+  });
+
   it('reads a PDF inside an allowed folder', async () => {
     // arrange
     const { allowed } = folders();

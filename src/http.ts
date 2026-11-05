@@ -62,7 +62,13 @@ export function httpMode(config: AppConfig): Mode {
 
 /** Builds the request listener; separate from listen() so tests can drive it. */
 export function createHttpHandler(baseConfig: AppConfig, options: HttpOptions, deps: Dependencies = {}) {
-  const config: AppConfig = { ...baseConfig, embedFiles: true };
+  // file_path uploads would read this machine's disk on behalf of remote callers, so the
+  // default folders don't apply here; clients send content_base64 unless the operator opts in.
+  const config: AppConfig = {
+    ...baseConfig,
+    embedFiles: true,
+    uploadDirs: baseConfig.explicitUploadDirs ? baseConfig.uploadDirs : [],
+  };
   const mode = httpMode(config);
   if (mode === 'single-tenant' && !options.authToken) {
     throw new ConfigError('MCP_AUTH_TOKEN is required when the HTTP server holds UOL credentials');

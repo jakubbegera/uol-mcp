@@ -1,7 +1,10 @@
+import { mkdtempSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { currentRevision } from '../src/domain/company.js';
 import { outstanding, paymentOfReceivable } from '../src/domain/receivables.js';
-import { safeFileName } from '../src/domain/files.js';
+import { safeFileName, saveDownload } from '../src/domain/files.js';
 import {
   amount,
   daysBetween,
@@ -110,5 +113,28 @@ describe('safeFileName', () => {
     expect(safeFileName('Faktura_vystavená.pdf', 'x.pdf')).toBe('Faktura_vystavená.pdf');
     expect(safeFileName('..', 'x.pdf')).toBe('x.pdf');
     expect(safeFileName(undefined, 'x.pdf')).toBe('x.pdf');
+  });
+
+  it('cleans the fallback too, since it is built from ids the model passes', () => {
+    expect(safeFileName(undefined, 'faktura-5/../../../tmp/x.pdf')).toBe('faktura-5_.._.._.._tmp_x.pdf');
+    expect(safeFileName('', '..')).toBe('download');
+  });
+});
+
+describe('saveDownload', () => {
+  it('never replaces an existing file and keeps downloads private to the owner', async () => {
+    // arrange
+    const dir = mkdtempSync(join(tmpdir(), 'uol-mcp-download-'));
+    writeFileSync(join(dir, 'faktura.pdf'), 'older');
+
+    // act
+    const first = await saveDownload(dir, 'faktura.pdf', Buffer.from('new'));
+    const second = await saveDownload(dir, 'faktura.pdf', Buffer.from('newer'));
+
+    // assert
+    expect(first).toBe(join(dir, 'faktura (1).pdf'));
+    expect(second).toBe(join(dir, 'faktura (2).pdf'));
+    expect(readFileSync(join(dir, 'faktura.pdf'), 'utf8')).toBe('older');
+    expect(statSync(first).mode & 0o777).toBe(0o600);
   });
 });

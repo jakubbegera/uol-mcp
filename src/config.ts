@@ -51,6 +51,8 @@ export interface AppConfig {
   access?: Access;
   /** Directories upload_document may read files from. */
   uploadDirs?: string[];
+  /** True when UOL_UPLOAD_DIRS was set; the HTTP server allows file_path uploads only then. */
+  explicitUploadDirs?: boolean;
   /** JSONL file every write is appended to. */
   auditLog?: string;
   /**
@@ -156,6 +158,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     toolsets,
     access,
     uploadDirs: uploadDirs && uploadDirs.length > 0 ? uploadDirs : defaultUploadDirs(),
+    explicitUploadDirs: Boolean(uploadDirs && uploadDirs.length > 0),
     auditLog: value(env.UOL_AUDIT_LOG),
     warnings,
     downloadDir: value(env.UOL_DOWNLOAD_DIR) ?? defaultDownloadDir(),
@@ -270,7 +273,9 @@ export function loadProfiles(
   try {
     parsed = JSON.parse(readFileSync(path, 'utf8'));
   } catch (error) {
-    throw new ConfigError(`UOL_PROFILES_FILE ${path}: ${error instanceof Error ? error.message : String(error)}`);
+    // JSON.parse quotes the text around the error, which may be a token, so only the kind of failure is reported.
+    const reason = error instanceof SyntaxError ? 'is not valid JSON' : `can't be read (${(error as NodeJS.ErrnoException).code ?? 'error'})`;
+    throw new ConfigError(`UOL_PROFILES_FILE ${path} ${reason}`);
   }
   const root = (parsed ?? {}) as { default?: unknown; accounts?: Record<string, Record<string, unknown>> };
   const entries = Object.entries(root.accounts ?? {});
