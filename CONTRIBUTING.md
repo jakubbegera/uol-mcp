@@ -62,6 +62,7 @@ Coding agents (and anyone who likes a checklist) will find the project rules con
 - CI must pass: type check, tests, `npm audit`, the Docker build with a Trivy scan, CodeQL, and
   dependency review. A new runtime dependency needs a good reason — the server deliberately has three.
 - Add a line to [CHANGELOG.md](CHANGELOG.md) under *Unreleased* for anything a user would notice.
-- `README.md` and `README.cs.md` mirror each other section by section; a change to one goes into both.
+- `README.cs.md` is a shorter Czech guide that links to `README.md` for the details; when a change touches
+  what it covers (setup, writing, several companies, privacy), update it too and keep its links working.
 
 By contributing you agree that your work is released under the [MIT License](LICENSE).

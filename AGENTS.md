@@ -84,7 +84,9 @@ and 26, `npm audit`, a Trivy scan of the image, CodeQL and dependency review.
 - New API fact learned → add it to DESIGN §2 with how you verified it.
 - New or changed tool → tool tables in `README.md`, `README.cs.md` and DESIGN §4 (and the tool counts
   there), `packaging/mcpb/manifest.json`, and `CHANGELOG.md` under *Unreleased*.
-- `README.md` and `README.cs.md` mirror each other section by section; change both.
+- `README.cs.md` is a shorter Czech guide that links to `README.md` for the details. Update it when a
+  change touches what it covers (setup, writing, several companies, privacy) and keep its anchor links
+  (`README.md#…`) pointing at existing headings.
 - New env variable → `src/index.ts` help text, the config tables in both READMEs and DESIGN §3.3.
 
 ## Git, CI and releases
