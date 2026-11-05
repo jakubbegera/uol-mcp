@@ -34,6 +34,10 @@ export const invoiceItem = z.object({
   quantity: z.number().nullable(),
   unit_price: z.number().nullable().describe('Without VAT'),
   unit_price_with_vat: z.number().nullable(),
+  price_includes_vat: z
+    .boolean()
+    .nullable()
+    .describe('true when the line was entered with VAT (VAT calculated from above) — repeat it with unit_price_with_vat'),
   vat_rate: z.number().nullable().describe('Percent'),
   discount_percent: z.number().nullable(),
   product_id: z.string().nullable(),

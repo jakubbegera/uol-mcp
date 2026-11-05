@@ -79,7 +79,7 @@ export function registerContactTools(server: McpServer, ctx: ToolContext): void 
         'Returns contact_id values for the invoice and receivable filters.',
       input: z.object({
         query: z.string().optional().describe('Full-text: name, contact id or note'),
-        name: z.string().optional(),
+        name: z.string().optional().describe('Name as UOL matches it; for part of a name use query'),
         company_number: z.string().optional().describe('IČO'),
         vatin: z.string().optional().describe('DIČ, e.g. CZ12345678'),
         country: z.string().optional().describe('ISO country code, e.g. CZ'),

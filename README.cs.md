@@ -33,9 +33,15 @@ popisuje [CHANGELOG.md](CHANGELOG.md).
 - **Číselníky:** měny, střediska, zakázky, ceníky, vlastní bankovní účty a další.
 
 Připravené postupy (v klientech jako příkazy s lomítkem): `monthly_review` (měsíční přehled),
-`vat_check` (kontrola DPH), `overdue_followup` (návrhy upomínek, nic neodesílá) a `process_inbox`
-(projde nahrané doklady). Seznam všech tools a volitelných sad je v
+`vat_check` (kontrola DPH), `overdue_followup` (návrhy upomínek, nic neodesílá), `process_inbox`
+(projde nahrané doklady) a s povoleným zápisem `issue_invoice` (sestaví fakturu z vašeho popisu,
+ukáže náhled a po potvrzení ji založí jako koncept). Seznam všech tools a volitelných sad je v
 [anglickém README](README.md#what-it-can-do).
+
+Skill [`uol-ucetnictvi`](skills/uol-ucetnictvi/SKILL.md) jde dál: fakturu vystaví tak, jak danému odběrateli
+fakturujete vždycky (DUZP, splatnost, produkty, texty řádků a bankovní účet odvodí z předchozích faktur), a
+výnosy, zisk, DPH a pohledávky čte jako účetní (nezaúčtované měsíce, odhady, termíny). Instalace je
+popsaná v [anglickém README](README.md#what-it-can-do).
 
 Příklady otázek:
 

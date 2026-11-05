@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { Client } from '@modelcontextprotocol/client';
 import { afterEach, describe, expect, it } from 'vitest';
+import { type AppConfig, loadConfig } from '../src/config.js';
 import { connect, demoConfig, fakeUolFetch } from './support/fake-uol.js';
 
 type Json = Record<string, any>;
@@ -107,6 +108,74 @@ describe('resources and prompts', () => {
   });
 });
 
+describe('issue_invoice prompt', () => {
+  const ZADANI = 'Faktura pro ACME s.r.o. (IČO 12345678): 10 hodin konzultací po 1500 Kč bez DPH, splatnost 14 dní';
+  const textOf = (prompt: { messages: { content: unknown }[] }) => (prompt.messages[0]?.content as { text: string }).text;
+
+  it.each<[string, Partial<AppConfig>, boolean]>([
+    ['read access', { access: 'read' }, false],
+    ['write access', { access: 'write' }, true],
+    ['full access', { access: 'full' }, true],
+    ['write access but no core toolset', { access: 'write', toolsets: new Set(['insights']) }, false],
+  ])('is listed only when it can write: %s', async (_case, overrides, listed) => {
+    // arrange
+    client = await connect(demoConfig(tmpdir(), overrides));
+
+    // act
+    const { prompts } = await client.listPrompts();
+
+    // assert
+    expect(prompts.some((p) => p.name === 'issue_invoice')).toBe(listed);
+  });
+
+  it("renders the user's description with a dry run first and a draft by default", async () => {
+    // arrange
+    client = await connect(demoConfig(tmpdir(), { access: 'write' }));
+
+    // act
+    const { prompts } = await client.listPrompts();
+    const prompt = await client.getPrompt({ name: 'issue_invoice', arguments: { zadani: ZADANI } });
+
+    // assert
+    expect(prompts.find((p) => p.name === 'issue_invoice')?.arguments).toEqual([
+      expect.objectContaining({ name: 'zadani', required: true }),
+    ]);
+    const text = textOf(prompt);
+    expect(text).toContain(ZADANI);
+    expect(text).toContain('dry_run: true');
+    expect(text).toContain('koncept (issue: false)');
+    expect(text).toContain('product_id nikdy nevymýšlej');
+    expect(text).toContain('search_sales_invoices s buyer_id');
+    expect(text).not.toContain('account:');
+  });
+
+  it('passes the chosen account on to the tools when several accounts are configured', async () => {
+    // arrange
+    const config = loadConfig({
+      UOL_ACCESS: 'write',
+      UOL_ACCOUNTS: 'hc,jb',
+      UOL_ACCOUNT_HC_TENANT: 'demo',
+      UOL_ACCOUNT_JB_TENANT: 'demo',
+      UOL_DOWNLOAD_DIR: tmpdir(),
+    });
+    client = await connect(config);
+
+    // act
+    const { prompts } = await client.listPrompts();
+    const chosen = await client.getPrompt({ name: 'issue_invoice', arguments: { zadani: ZADANI, ucet: 'jb' } });
+    const byDefault = await client.getPrompt({ name: 'issue_invoice', arguments: { zadani: ZADANI } });
+
+    // assert
+    expect(prompts.find((p) => p.name === 'issue_invoice')?.arguments).toEqual([
+      expect.objectContaining({ name: 'zadani', required: true }),
+      expect.objectContaining({ name: 'ucet', required: false }),
+    ]);
+    expect(textOf(chosen)).toContain('account: "jb"');
+    expect(textOf(byDefault)).toContain('výchozím účtu');
+    expect(textOf(byDefault)).not.toContain('account: "');
+  });
+});
+
 describe('without credentials', () => {
   it('still lists tools and answers calls with setup instructions', async () => {
     // arrange
@@ -192,9 +261,10 @@ describe('core tools against DEMO fixtures', () => {
     const { data } = await call('get_sales_invoice', { invoice_id: '2026000044' });
 
     // assert
-    expect(data.items[0]).toMatchObject({ quantity: 1, unit_price: 121, vat_rate: 0, product_id: 'zaloha_fo' });
+    expect(data.items[0]).toMatchObject({ quantity: 1, unit_price: 121, price_includes_vat: true, vat_rate: 0, product_id: 'zaloha_fo' });
     expect(data.payment).toEqual({ state: 'unpaid', outstanding: 121 });
     expect(data.buyer.id).toBe('gatom_technicky_test_1');
+    expect(data).toMatchObject({ bank_account_id: 'cs_czk', contract_id: null });
   });
 
   it('get_sales_invoice turns a 404 into a tool error', async () => {

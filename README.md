@@ -37,8 +37,16 @@ More read tools are available as opt-in toolsets (`UOL_TOOLSETS`): `ledger` (gen
 documents), `banking` (bank movements, petty-cash documents) and `warehouse` (products, stock levels, orders).
 
 Ready-made prompts (slash commands in most clients): `monthly_review`, `vat_check`,
-`overdue_followup` (drafts reminders, sends nothing), `process_inbox`. The `uol://guide` resource
-explains the domain to the model.
+`overdue_followup` (drafts reminders, sends nothing), `process_inbox`, and with
+[write access](#writing-opt-in) `issue_invoice` (builds a sales invoice from your description, shows a
+dry run and creates a draft once you confirm). The `uol://guide` resource explains the domain to the model.
+
+The [`uol-ucetnictvi` skill](skills/uol-ucetnictvi/SKILL.md) goes further: Claude issues an invoice the
+way you always invoice that customer (DUZP rule, due days, products, line texts and bank account learned
+from your earlier invoices to them) and reads revenue, profit, VAT and receivables the way an
+accountant does (unbooked months, estimates, deadlines). Install it in Claude Desktop or claude.ai by
+zipping the `skills/uol-ucetnictvi` folder and uploading it under Settings → Capabilities → Skills, or in
+Claude Code by copying the folder to `~/.claude/skills/`.
 
 The server knows the API's quirks: invoice status `valid` means *draft*, payment status exists only
 for issued invoices, credit notes come with positive amounts, revenue and expenses have to be read

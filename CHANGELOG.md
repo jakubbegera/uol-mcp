@@ -5,6 +5,28 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- `issue_invoice` prompt (with `UOL_ACCESS=write` or `full`): builds a sales invoice from a free-text
+  Czech description. It finds the buyer and an existing product for every line, never invents either,
+  shows a dry run with totals and dates, and creates a draft only after you confirm; issuing needs an
+  explicit request. With several accounts it takes the account to use (`ucet`). It first learns how
+  that customer is usually invoiced from their earlier invoices (DUZP rule, due days, products, line
+  texts, bank account, symbols, several invoices per period, recurring lines), checks for an invoice
+  that already exists for the period and for overdue debts, and warns when the issue date is more than
+  15 days after the DUZP.
+- `uol-ucetnictvi` skill in `skills/`: the same invoicing flow, and how to read revenue, profit, VAT,
+  receivables and bank balances correctly, with the Czech tax basics the model tends to get wrong.
+- `get_sales_invoice` returns the invoice's own bank account and contract, and invoice lines say
+  whether the price was entered with VAT (`price_includes_vat`).
+
+### Changed
+
+- `get_financial_overview` and `get_business_snapshot` mark months with no postings as `booked: false`
+  and report `booked_through`, so a month the accountant hasn't booked yet isn't read as zero.
+- Revenue and expense account totals carry the account's name from the Czech chart of accounts.
+- `get_business_snapshot` adds `vat_due_next`, the VAT period whose return is due next.
+
 ### Fixed
 
 - `get_vat_overview` and the snapshot's VAT section no longer fail on tenants that answer 404 for
@@ -13,13 +35,6 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - The VAT estimate deducts a received invoice's VAT in the period it arrived when that is later than its DUZP,
   as UOL's own VAT report does; before, an invoice dated at month end and received the next month landed in
   the wrong period.
-
-### Changed
-
-- `get_financial_overview` and `get_business_snapshot` mark months with no postings as `booked: false`
-  and report `booked_through`, so a month the accountant hasn't booked yet isn't read as zero.
-- Revenue and expense account totals carry the account's name from the Czech chart of accounts.
-- `get_business_snapshot` adds `vat_due_next`, the VAT period whose return is due next.
 
 ## [0.5.0] — 2026-11-05
 
