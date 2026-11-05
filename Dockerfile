@@ -23,7 +23,11 @@ WORKDIR /app
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY package.json LICENSE README.md ./
-RUN mkdir -p /data && chown node:node /data
+# The server needs only node; the package managers bundled with the base image (and the
+# advisories they carry) don't ship.
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack /opt/yarn-* \
+      /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack /usr/local/bin/yarn /usr/local/bin/yarnpkg \
+    && mkdir -p /data && chown node:node /data
 USER node
 # Exported invoices and downloaded documents land here; mount a host folder to keep them.
 VOLUME /data
