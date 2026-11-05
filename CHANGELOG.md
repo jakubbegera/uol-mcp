@@ -5,6 +5,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.6.1] — 2026-11-05
+
 ### Fixed
 
 - `get_business_snapshot` reports `booked_through` even when the last two months have no postings yet:
@@ -147,7 +149,8 @@ First public release (0.1–0.3 were internal milestones).
 - Distribution: npm, GHCR image (amd64 / arm64), Claude Desktop extension (`.mcpb`), MCP Registry
   (`eu.humblecode/uol`).
 
-[Unreleased]: https://github.com/jakubbegera/uol-mcp/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/jakubbegera/uol-mcp/compare/v0.6.1...HEAD
+[0.6.1]: https://github.com/jakubbegera/uol-mcp/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/jakubbegera/uol-mcp/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/jakubbegera/uol-mcp/compare/v0.4.4...v0.5.0
 [0.4.4]: https://github.com/jakubbegera/uol-mcp/compare/v0.4.2...v0.4.4
