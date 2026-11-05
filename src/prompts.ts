@@ -152,19 +152,24 @@ function issueInvoice(zadani: string, target: InvoiceTarget): string {
     '1. Odběratel: najdi ho přes search_contacts (část názvu v query, IČO v company_number). ' +
     'Když najdeš víc kandidátů nebo žádného, ukaž mi, co jsi našel, a zeptej se. Kontakt nikdy nehádej; ' +
     'nový založ přes create_contact, jen když o to výslovně požádám. Je-li označený jako nespolehlivý plátce, upozorni mě. ' +
-    'Přes list_receivables s customer_id a overdue_only zjisti, jestli nám nedluží po splatnosti, a když ano, zmiň to.\n' +
+    'Přes list_receivables s customer_id a overdue_only zjisti, jestli nám nedluží po splatnosti, a když ano, zmiň to ' +
+    'i s datem poslední spárované platby (stav úhrad se mění, až účetní spáruje výpisy).\n' +
     '2. Vzor z historie: podívej se, jak tomuto odběrateli fakturujeme. search_sales_invoices s buyer_id (limit 20, ať ' +
     'pokryješ aspoň tři fakturovaná období) a u faktur posledního období get_sales_invoice. Zjisti, jak se volí DUZP ' +
     '(tax_date) vůči datu vystavení a fakturovanému období, kolik dní je splatnost, jaké produkty, texty řádků, ceny ' +
     '(price_includes_vat) a sazby DPH se používají, jestli se za jedno období vystavuje víc faktur (např. po projektech), ' +
     'které řádky se opakují každé období (paušály) a jaký je způsob platby, bankovní účet (bank_account_id), konstantní ' +
     'a specifický symbol, text a zakázka. Vzor mi ve dvou až třech řádcích shrň s doložením; když se faktury liší, ' +
-    'ukaž varianty a zeptej se. Bez historie se zeptej na to, co zadání neurčuje. Zkontroluj taky, jestli faktura za ' +
-    'stejné období už neexistuje (podívej se na status, i koncept se počítá), a když ano, ukaž mi ji a zeptej se.\n' +
+    'ukaž varianty a zeptej se; liší-li se jen starší blok faktur, platí poslední souvislá řada. Bez historie se zeptej ' +
+    'na to, co zadání neurčuje. Zkontroluj taky přes search_sales_invoices s buyer_id a tax_date_from od začátku ' +
+    'fakturovaného období, jestli faktura už neexistuje (seznam vrací i koncepty, podívej se na status), a když ano, ' +
+    'ukaž mi ji a zeptej se.\n' +
     '3. Produkty: každý řádek faktury potřebuje existující product_id z list_codebook s kind: products; přednostně ten ' +
     'z historie. product_id nikdy nevymýšlej. Když žádný nesedí, řekni mi to a zeptej se, jak dál.\n' +
     '4. Řádky a hlavička: ze zadání vezmi, co se mění (období, množství, ceny, řádky navíc), a zbytek doplň podle vzoru. ' +
     'Řádky, které se ve vzoru opakují každé období a v zadání nejsou, potichu nepřidávej ani nevynechávej, zeptej se. ' +
+    'Když zadání neuvádí množství (např. „jako obvykle“ u hodinové fakturace), zeptej se na ně; minulé období ukaž jen ' +
+    'pro orientaci a v návrhu nech „?“. ' +
     'Řádek má description, quantity, vat_rate a cenu za jednotku, buď unit_price (bez DPH), nebo unit_price_with_vat ' +
     '(s DPH), ve stejné konvenci jako v historii; když není jasné, zda je cena s DPH, nebo bez, zeptej se. Jednotku ' +
     '(hodiny, kusy) určuje produkt; množství zadej v ní a do textu řádku ji nepiš. Data předej jako issue_date, tax_date ' +

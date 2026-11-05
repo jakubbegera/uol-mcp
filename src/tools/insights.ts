@@ -25,6 +25,9 @@ const accountTotal = z.object({
   amount: z.number(),
 });
 
+/** How far back the snapshot looks for the latest posting when the last two months have none. */
+const BOOKED_LOOKBACK_MONTHS = 6;
+
 const BOOKED_THROUGH = 'Date of the latest revenue or expense posting: the ledger is booked up to here; later months are not booked yet';
 
 const NO_CLOSING_DOCUMENTS =
@@ -276,7 +279,11 @@ export function registerInsightTools(server: McpServer, ctx: ToolContext): void 
         attempt('financials', async () => {
           const summary = await ledgerSummary(client, monthKeys(today, 2), today);
           flag('financials', summary.truncated);
-          return summary;
+          if (summary.booked_through !== null) return summary;
+          // Nothing booked in either month: look further back so the answer can say how far the books go.
+          // A truncated read starts at the oldest postings and could miss the latest one, so it says nothing.
+          const earlier = await ledgerSummary(client, monthKeys(today, BOOKED_LOOKBACK_MONTHS), today);
+          return { ...summary, booked_through: earlier.truncated ? null : earlier.booked_through };
         }),
         attempt('receivables', async () => {
           const { rows, truncated } = await fetchAllReceivables(client, { state: 'unpaid' });

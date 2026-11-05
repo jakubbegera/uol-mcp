@@ -13,7 +13,9 @@ for it or falling back to defaults that don't match.
    you found and ask. Note `unreliable_payer`: if it is true, warn the user before going on (VAT on a
    payment to an unreliable payer's account is a liability risk).
 3. `list_receivables` with `customer_id` and `overdue_only: true`: if the customer owes money past its
-   due date, mention it — the user may want to wait or send a reminder with the new invoice.
+   due date, mention it — the user may want to wait or send a reminder with the new invoice. Payment
+   status only moves when the accountant pairs bank statements, so say when the customer's last paired
+   payment was (`last_payment_date`) and that the "debt" may already be paid.
 4. `get_company` tells whether the company is a VAT payer (`vat_period` is `not_vat_payer` otherwise);
    a non-payer issues invoices without VAT.
 
@@ -36,25 +38,37 @@ for it or falling back to defaults that don't match.
 | Due period | `due_date` − `issue_date` in days. If it varies, take the most recent and show the variants. |
 | Lines | `product_id`, `description` (often one line per project or service), `quantity`, unit price and `price_includes_vat` (repeat the same convention: `unit_price` or `unit_price_with_vat`), `vat_rate`. The unit (hours, pieces) comes from the product — don't write it into the description. |
 | Recurring lines | Lines that appear every period with the same amount (a monthly fee, maintenance, a licence). |
-| Payment | `payment_method`, `bank_account_id`, `constant_symbol`, `specific_symbol` (some customers want e.g. their IČO there); `variable_symbol` is usually the invoice number — leave it out and UOL fills it. |
+| Occasional lines | Lines that appear in some periods only or with a different amount each time (re-invoiced costs, a side project). Keep the last amounts as a reference. |
+| Payment | `payment_method`, `bank_account_id`, `constant_symbol`, `specific_symbol` (some customers want e.g. their IČO there); `variable_symbol` is usually the invoice number — leave it out and UOL fills it. For the bank account, `list_codebook` (`kind: my_bank_accounts`) shows `officially_published`; see the 540 000 Kč rule in czech-tax-basics.md. |
 | Header | `currency`, `text`, `note`, `department_id`, `contract_id` when they repeat. |
 
 4. Tell the user the pattern in two or three lines with the evidence ("posledních 5 faktur: DUZP
    poslední den fakturovaného měsíce, vystaveno do 15. dne dalšího měsíce, splatnost 14 dní, řádky po
-   projektech, 1 200 Kč/h bez DPH, 21 %"). If invoices disagree, show the variants and ask which to use.
+   projektech, 1 200 Kč/h bez DPH, 21 %"). If recent invoices disagree, show the variants and ask which
+   to use. If the recent ones agree and only an older block differs (the rule changed months ago), the
+   latest consistent run wins — mention the older variant in one line instead of asking.
    No history (a new customer) → ask for what the request leaves open, and let UOL's defaults fill dates.
-5. **Duplicates.** If the history already has an invoice for the period being billed — issued or a draft
-   (check `status`) — show it and ask before preparing another one.
+5. **Several invoices per period without a text** to tell them apart: identify each one by its lines
+   (project names) and keep the numbering order; say how you matched them.
+6. **Duplicates.** `search_sales_invoices` with `buyer_id` and `tax_date_from` = the first day of the
+   billed period. The list includes drafts and cancelled invoices — check `status`: an issued invoice or a
+   draft for the period means show it and ask before preparing another one.
 
 ## 3. Build the invoice
 
 - Take what the user said (period, quantities, prices, extra lines) and fill everything else from the
   pattern. "Za říjen" with a month-end DUZP rule means `tax_date` = last day of October.
 - Recurring lines the user didn't mention: don't add or drop them silently — ask ("v historii je každý
-  měsíc i paušál za podporu 5 000 Kč, přidat?").
+  měsíc i paušál za podporu 5 000 Kč, přidat?"). Occasional lines: list them with their last amounts
+  and ask whether there is anything this period.
+- **Quantities the request doesn't give** ("jako obvykle" for a customer billed by the hour): ask for
+  them. Show the last period's quantities as a reference only, never as defaults; put "?" in the
+  proposal and give totals as a formula (hodiny × sazba + paušál) until the user fills them in.
 - Dates: `issue_date` is today unless the user says otherwise — never backdate it to match the pattern;
   `due_date` = issue date + the usual days. Check the 15-day rule (see czech-tax-basics.md): if the
   issue date is more than 15 days after the DUZP, warn the user.
+- Bank account: if the total with VAT is over 540 000 Kč and the account has
+  `officially_published: false`, warn — the customer may hold the payment (see czech-tax-basics.md).
 - Lines need an existing `product_id` from `list_codebook` (`kind: products`); reuse the one from
   history. Never invent one.
 - Prices: keep the same convention as history (usually without VAT). If the user's amount is ambiguous

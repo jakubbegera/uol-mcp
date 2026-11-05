@@ -5,6 +5,20 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- `get_business_snapshot` reports `booked_through` even when the last two months have no postings yet:
+  it looks up to six months back for the latest one instead of returning null.
+
+### Changed
+
+- `uol-ucetnictvi` skill and `issue_invoice`: a duplicate check by the billed period (the invoice list
+  includes drafts), the last paired payment next to overdue debts, quantities left open when the request
+  gives none, occasional lines with varying amounts, the latest consistent run of invoices wins over an
+  older block, and a warning for invoices over 540 000 Kč to a bank account not published in the VAT
+  register.
+- `search_sales_invoices` says that drafts and cancelled invoices are listed too.
+
 ## [0.6.0] — 2026-11-05
 
 ### Added
