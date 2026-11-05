@@ -10,6 +10,9 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - `get_vat_overview` and the snapshot's VAT section no longer fail on tenants that answer 404 for
   internal documents: every period is estimated from invoices, and the method says so.
 - Errors without a message from UOL name the API path that failed instead of a bare status.
+- The VAT estimate deducts a received invoice's VAT in the period it arrived when that is later than its DUZP,
+  as UOL's own VAT report does; before, an invoice dated at month end and received the next month landed in
+  the wrong period.
 
 ### Changed
 

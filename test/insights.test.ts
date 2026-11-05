@@ -3,7 +3,7 @@ import type { Client } from '@modelcontextprotocol/client';
 import { afterEach, describe, expect, it } from 'vitest';
 import { balancesByCurrency, latestBalances } from '../src/domain/bank.js';
 import { monthKeys } from '../src/domain/ledger.js';
-import { vatWindows } from '../src/domain/vat.js';
+import { deductionDate, vatWindows } from '../src/domain/vat.js';
 import { connect, demoConfig, fakeUolFetch, synthetic } from './support/fake-uol.js';
 
 type Json = Record<string, any>;
@@ -137,6 +137,57 @@ describe('get_vat_overview', () => {
       due_date: '2027-01-25',
       days_left: 82,
     });
+  });
+});
+
+describe('input VAT period', () => {
+  it('claims a received invoice in the later of its DUZP and its receipt date', () => {
+    expect(deductionDate({ tax_payment_date: '2026-06-30', date_of_receipt: '2026-07-02' })).toBe('2026-07-02');
+    expect(deductionDate({ tax_payment_date: '2026-08-10', date_of_receipt: '2026-08-01' })).toBe('2026-08-10');
+    expect(deductionDate({ tax_payment_date: '2026-08-10', date_of_receipt: null })).toBe('2026-08-10');
+  });
+
+  it('counts an invoice received after its period in the period it arrived, once', async () => {
+    // arrange
+    const { fetch } = fakeUolFetch();
+    const lateInvoice = {
+      invoice_id: 2026900042,
+      status: 'confirmed',
+      type: 'standard',
+      vat_document: true,
+      currency: { currency_id: 'CZK' },
+      issue_date: '2026-09-30',
+      tax_payment_date: '2026-09-30',
+      date_of_receipt: '2026-10-05',
+      vat1_amount: '210.0',
+      vat2_amount: '0.0',
+      vat3_amount: '0.0',
+    };
+    const withLateInvoice: typeof fetch = async (input, init) => {
+      const url = new URL(String(input));
+      // Served for both the DUZP and the receipt-date query, so the overview has to drop the duplicate.
+      return url.pathname.endsWith('/purchase_invoices')
+        ? Response.json({ _meta: { pagination: {} }, items: [lateInvoice] })
+        : fetch(input, init);
+    };
+    client = await connect(demoConfig(tmpdir()), withLateInvoice);
+
+    // act
+    const result = await client.callTool({ name: 'get_vat_overview', arguments: {} });
+
+    // assert
+    const [open] = (result.structuredContent as Json).periods;
+    expect(open).toMatchObject({ period: '2026-Q4', input_vat: 210, invoices_counted: { sales: 4, purchases: 1 } });
+  });
+
+  it('asks UOL for purchases by DUZP and by receipt date', async () => {
+    // act
+    const { requests } = await call('get_vat_overview');
+
+    // assert
+    const queries = requests.filter((r: Json) => String(r.url).includes('/purchase_invoices?')).map((r: Json) => String(r.url));
+    expect(queries.some((u: string) => u.includes('tax_payment_date_from='))).toBe(true);
+    expect(queries.some((u: string) => u.includes('received_date_from='))).toBe(true);
   });
 });
 
