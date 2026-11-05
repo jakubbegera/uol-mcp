@@ -64,8 +64,9 @@ const BANK_NOTE =
   'UOL stores monthly opening-balance snapshots (1st of the month), not live balances; always quote the as_of date.';
 
 const VAT_NOTE =
-  'Closed periods use UOL\'s "DPH" closing document (exact). Open periods are estimated from issued invoices by DUZP: ' +
-  'proformas skipped, corrective invoices counted as credit notes, internal documents and reverse charge not included.';
+  'Closed periods use UOL\'s "DPH" closing document (exact). Open periods are estimated from issued invoices — ' +
+  'output VAT by DUZP, input VAT by the later of DUZP and the receipt date: proformas skipped, ' +
+  'corrective invoices counted as credit notes, internal documents and reverse charge not included.';
 
 function vatCount(kind: VatKind, requested: number | undefined): number {
   return requested ?? (kind === 'monthly' ? 4 : 2);
