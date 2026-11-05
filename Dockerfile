@@ -1,5 +1,8 @@
 # syntax=docker/dockerfile:1
-FROM node:22-alpine AS build
+# The build output is plain JavaScript with no native modules, so it is compiled once on the
+# runner's own platform; only the small runtime stage is assembled per target platform
+# (a multi-arch build would otherwise run npm ci and tsc under QEMU emulation).
+FROM --platform=$BUILDPLATFORM node:22-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --ignore-scripts

@@ -85,6 +85,8 @@ jobs:
           push: true
           provenance: true
           sbom: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           tags: |
             ghcr.io/jakubbegera/uol-mcp:${{ needs.verify.outputs.version }}
             ghcr.io/jakubbegera/uol-mcp:latest
