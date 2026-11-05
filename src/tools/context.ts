@@ -138,7 +138,10 @@ export function registerTool<I extends z.ZodObject, O extends z.ZodObject>(
 export function describeError(error: unknown): string {
   if (error instanceof ConfigError) return `uol-mcp is not configured: ${error.message}. ${SETUP_HINT}`;
   if (error instanceof InputError) return `Invalid input: ${error.message}`;
-  if (error instanceof UolApiError) return `UOL API error (HTTP ${error.status}, ${error.code}): ${error.message}`;
+  if (error instanceof UolApiError) {
+    const code = error.code === String(error.status) ? '' : `, ${error.code}`;
+    return `UOL API error (HTTP ${error.status}${code}): ${error.message}`;
+  }
   if (error instanceof Error) return `Unexpected error: ${error.message}`;
   return `Unexpected error: ${String(error)}`;
 }

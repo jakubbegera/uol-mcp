@@ -5,6 +5,19 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- `get_vat_overview` and the snapshot's VAT section no longer fail on tenants that answer 404 for
+  internal documents: every period is estimated from invoices, and the method says so.
+- Errors without a message from UOL name the API path that failed instead of a bare status.
+
+### Changed
+
+- `get_financial_overview` and `get_business_snapshot` mark months with no postings as `booked: false`
+  and report `booked_through`, so a month the accountant hasn't booked yet isn't read as zero.
+- Revenue and expense account totals carry the account's name from the Czech chart of accounts.
+- `get_business_snapshot` adds `vat_due_next`, the VAT period whose return is due next.
+
 ## [0.5.0] — 2026-11-05
 
 ### Added

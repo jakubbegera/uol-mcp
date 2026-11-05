@@ -68,19 +68,20 @@ describe('get_financial_overview', () => {
 
     // assert
     expect(data.months).toEqual([
-      { month: '2026-10', revenue: 12500, expenses: 10000, profit: 2500 },
-      { month: '2026-11', revenue: -3000, expenses: -500, profit: -2500 },
+      { month: '2026-10', revenue: 12500, expenses: 10000, profit: 2500, booked: true },
+      { month: '2026-11', revenue: -3000, expenses: -500, profit: -2500, booked: true },
     ]);
     expect(data.totals).toEqual({ revenue: 9500, expenses: 9500, profit: 0 });
     expect(data.current_vs_previous).toMatchObject({ month: '2026-11', previous_month: '2026-10', revenue_change_pct: -124 });
     expect(data.revenue_by_account).toEqual([
-      { account: '602', amount: 7000 },
-      { account: '604', amount: 2500 },
+      { account: '602', name: 'Tržby z prodeje služeb', amount: 7000 },
+      { account: '604', name: 'Tržby za zboží', amount: 2500 },
     ]);
     expect(data.expenses_by_account).toEqual([
-      { account: '521', amount: 6000 },
-      { account: '518', amount: 3500 },
+      { account: '521', name: 'Mzdové náklady', amount: 6000 },
+      { account: '518', name: 'Ostatní služby', amount: 3500 },
     ]);
+    expect(data.booked_through).toMatch(/^2026-11-\d\d$/);
     const ledger = requests.filter((r) => r.url.pathname === '/api/v1/accounting_records');
     expect(ledger).toHaveLength(4);
     expect(ledger.map((r) => r.url.searchParams.get('date_from'))).toEqual(Array(4).fill('2026-10-01'));
@@ -91,7 +92,15 @@ describe('get_financial_overview', () => {
     const { data } = await call('get_financial_overview', { months: 3 });
 
     // assert
-    expect(data.months[0]).toEqual({ month: '2026-09', revenue: 7000, expenses: 0, profit: 7000 });
+    expect(data.months[0]).toEqual({ month: '2026-09', revenue: 7000, expenses: 0, profit: 7000, booked: true });
+  });
+
+  it('marks a month without postings as not booked rather than a zero month', async () => {
+    // act
+    const { data } = await call('get_financial_overview', { months: 4 });
+
+    // assert
+    expect(data.months[0]).toEqual({ month: '2026-08', revenue: 0, expenses: 0, profit: 0, booked: false });
   });
 });
 
@@ -154,9 +163,11 @@ describe('get_business_snapshot', () => {
     expect(data.errors).toEqual([]);
     expect(data.incomplete).toEqual([]);
     expect(data.company).toEqual({ name: 'DEMO, s. r. o.', vat_period: 'quarterly' });
-    expect(data.this_month).toEqual({ month: '2026-11', revenue: -3000, expenses: -500, profit: -2500 });
+    expect(data.this_month).toEqual({ month: '2026-11', revenue: -3000, expenses: -500, profit: -2500, booked: true });
     expect(data.previous_month.month).toBe('2026-10');
     expect(data.vat_current_period.period).toBe('2026-Q4');
+    expect(data.vat_due_next.period).toBe('2026-Q4');
+    expect(data.booked_through).toMatch(/^2026-11-/);
     expect(data.receivables.totals.length).toBeGreaterThan(0);
     expect(data.receivables.most_overdue.length).toBeLessThanOrEqual(5);
     expect(data.documents_to_process).toBe(1);
@@ -204,3 +215,23 @@ describe('get_business_snapshot', () => {
     expect(data.incomplete).toEqual(['bank']);
   });
 });
+
+describe('tenants without internal documents', () => {
+  it('estimates every VAT period from invoices instead of failing', async () => {
+    // arrange
+    const { fetch } = fakeUolFetch();
+    const noInternalDocuments: typeof fetch = async (input, init) =>
+      String(input).includes('/internal_documents') ? new Response('', { status: 404 }) : fetch(input, init);
+    client = await connect(demoConfig(tmpdir()), noInternalDocuments);
+
+    // act
+    const result = await client.callTool({ name: 'get_vat_overview', arguments: {} });
+
+    // assert
+    const data = result.structuredContent as Json;
+    expect(result.isError).toBeFalsy();
+    expect(data.periods.every((p: Json) => p.source === 'invoices_estimate')).toBe(true);
+    expect(data.method).toMatch(/no internal documents/);
+  });
+});
+

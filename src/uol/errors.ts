@@ -35,7 +35,7 @@ const CODE_HINTS: Record<string, string> = {
   '0014': 'The UOL user lacks the permission for this action (repairs need the cancel right on the user\'s sales membership).',
 };
 
-export function errorFromResponse(status: number, bodyText: string): UolApiError {
+export function errorFromResponse(status: number, bodyText: string, path?: string): UolApiError {
   let body: UolErrorBody | undefined;
   try {
     body = JSON.parse(bodyText) as UolErrorBody;
@@ -64,6 +64,6 @@ export function errorFromResponse(status: number, bodyText: string): UolApiError
 
   const code = body?.code ?? String(status);
   const hint = CODE_HINTS[code];
-  const message = [body?.message, hint].filter(Boolean).join(' ') || `UOL answered HTTP ${status}.`;
+  const message = [body?.message, hint].filter(Boolean).join(' ') || `UOL answered HTTP ${status}${path ? ` for ${path}` : ''}.`;
   return new UolApiError(message, status, code, body?.developerMessage);
 }

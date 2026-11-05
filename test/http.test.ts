@@ -122,6 +122,17 @@ describe('UolHttp', () => {
     );
   });
 
+  it('names the API path when UOL answers without a message', async () => {
+    // arrange
+    const http = new UolHttp(credentials, { fetch: async () => new Response('', { status: 404 }) });
+
+    // act
+    const error = await http.getJson('/v1/internal_documents', { per_page: 1 }).catch((e: unknown) => e);
+
+    // assert
+    expect(error).toMatchObject({ status: 404, message: 'UOL answered HTTP 404 for /v1/internal_documents.' });
+  });
+
   it('turns 404 bodies into UolApiError', async () => {
     // arrange
     const { fetch } = fakeUolFetch();

@@ -132,6 +132,14 @@ export class UolHttp {
     return url.toString();
   }
 
+  /** The API path of [url] for error messages (`/v1/…`, no host, no query); foreign hosts stay unnamed. */
+  private pathOf(url: string): string | undefined {
+    if (!this.isOwnUrl(url)) return undefined;
+    const path = new URL(url).pathname;
+    const base = new URL(this.baseUrl).pathname;
+    return path.startsWith(base) ? path.slice(base.length) || '/' : path;
+  }
+
   private isOwnUrl(url: string): boolean {
     return new URL(url).origin === this.origin;
   }
@@ -169,7 +177,9 @@ export class UolHttp {
     }
     this.log(`[${id}] ← ${response.status} ${Date.now() - started} ms`);
 
-    if (!response.ok) throw errorFromResponse(response.status, await response.text().catch(() => ''));
+    if (!response.ok) {
+      throw errorFromResponse(response.status, await response.text().catch(() => ''), this.pathOf(url));
+    }
     return response;
   }
 
