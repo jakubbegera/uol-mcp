@@ -163,6 +163,21 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      # The registry checks the npm package, and a fresh npm version takes a few minutes to appear.
+      - name: Wait until npm serves this version
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
+        run: |
+          for attempt in $(seq 1 30); do
+            if curl -fsS -o /dev/null "https://registry.npmjs.org/uol-mcp/${VERSION}"; then
+              echo "uol-mcp@${VERSION} is on npm"
+              exit 0
+            fi
+            echo "waiting for uol-mcp@${VERSION} on npm (${attempt}/30)"
+            sleep 20
+          done
+          echo "uol-mcp@${VERSION} did not appear on npm within 10 minutes" >&2
+          exit 1
       - name: Skip a version the registry already has
         id: existing
         env:

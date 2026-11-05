@@ -5,6 +5,11 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- The Docker image runs on Node.js 26 (LTS); CI tests every supported line (22, 24, 26).
+- Releases wait for npm to serve a new version before publishing it to the MCP Registry.
+
 ## [0.4.1] — 2026-11-05
 
 ### Security
