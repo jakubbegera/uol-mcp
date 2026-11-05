@@ -9,7 +9,7 @@ bookkeeping: issued and received invoices, who owes you money, uploaded document
 
 [Česky](README.cs.md)
 
-**Status:** v0.4 — read-only by default, opt-in writes.
+**Status:** v0.4 — read-only by default, opt-in writes. What changed: [CHANGELOG.md](CHANGELOG.md).
 
 ## What it can do
 
@@ -67,9 +67,11 @@ Want to try it first? `UOL_TENANT=demo` uses UOL's public DEMO company, no token
 | `UOL_DOWNLOAD_DIR` | Where exported and downloaded files go (default `~/Downloads/uol-mcp`) |
 | `UOL_TOOLSETS` | Comma-separated: `core`, `insights` (these two are the default), `ledger`, `banking`, `warehouse`, or `all` |
 | `UOL_ACCESS` | `read` (default), `write` or `full` — see [Writing](#writing-opt-in) |
-| `UOL_PROFILES_FILE` | Several companies in one server — see [Several companies](#several-companies) |
+| `UOL_ACCOUNTS`, `UOL_DEFAULT_ACCOUNT` | Several companies in one server — see [Several companies](#several-companies) |
+| `UOL_PROFILES_FILE` | The same from a JSON file |
 | `UOL_UPLOAD_DIRS` | Folders `upload_document` may read from (default `~/Downloads`, `~/Desktop`, `~/Documents`; `:`-separated, `;` on Windows). The HTTP server has no default: without this variable it accepts only `content_base64` |
 | `UOL_AUDIT_LOG` | File that records every write as a JSON line |
+| `UOL_TIMEOUT_MS` | Timeout of one UOL request (default `30000`) |
 | `UOL_DEBUG` | `1` logs requests to stderr (never credentials) |
 
 ### Claude Desktop
@@ -146,8 +148,20 @@ Two modes:
   `MCP_AUTH_TOKEN` is optional.
 
 Over HTTP, exported invoices and downloaded documents come back inside the tool result instead of
-being saved on the server. In Docker, bind to all interfaces and publish the port:
-`docker run -p 3000:3000 -e MCP_TRANSPORT=http -e HOST=0.0.0.0 -e MCP_ALLOWED_HOSTS=mcp.example.com …`.
+being saved on the server, and `upload_document` takes the file as `content_base64` — it reads no
+paths on the server unless `UOL_UPLOAD_DIRS` is set. In Docker, bind to all interfaces and publish the
+port: `docker run -p 3000:3000 -e MCP_TRANSPORT=http -e HOST=0.0.0.0 -e MCP_ALLOWED_HOSTS=mcp.example.com …`.
+
+| Variable | Meaning |
+|---|---|
+| `MCP_TRANSPORT` | `http` starts the HTTP server (same as `--http`) |
+| `HOST`, `PORT` | Bind address, default `127.0.0.1:3000` |
+| `MCP_AUTH_TOKEN` | Bearer token clients must send; required in one-tenant mode, recommended in pass-through |
+| `MCP_ALLOWED_HOSTS` | Accepted `Host` names (comma-separated) when not bound to localhost |
+| `MCP_ALLOWED_ORIGINS` | Browser origins allowed to call the endpoint (none by default) |
+
+The server speaks plain HTTP: anywhere beyond localhost, put it behind a reverse proxy that
+terminates TLS, and use a long random `MCP_AUTH_TOKEN`.
 
 ### Check the setup
 
@@ -249,10 +263,19 @@ bash scripts/build-mcpb.sh  # builds build/uol-mcp.mcpb
 docker build -t uol-mcp .
 ```
 
-Releases are cut by pushing a `v*` tag; `.github/workflows/release.yml` publishes to npm, GHCR,
-the GitHub release (MCPB bundle) and the MCP Registry.
+CI runs the type check, tests, `npm audit`, a Trivy scan of the Docker image, CodeQL and, on pull
+requests, dependency review; Dependabot keeps dependencies, actions and the base image current.
+
+Releases are cut by pushing a `v*` tag; after a maintainer approves the `release` environment,
+`.github/workflows/release.yml` publishes to npm, GHCR, the GitHub release (MCPB bundle) and the MCP
+Registry.
 
 Design notes, API facts and the roadmap are in [docs/DESIGN.md](docs/DESIGN.md).
+
+## Contributing
+
+Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). Report security problems
+privately as described in [SECURITY.md](SECURITY.md).
 
 ## License
 

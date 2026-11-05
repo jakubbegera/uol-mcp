@@ -183,8 +183,11 @@ server.json             MCP Registry entry; the release workflow adds the MCPB p
   still see it). Binary results add a `resource_link` to the saved file.
 - Amounts are numbers with an ISO currency; dates are ISO; statuses are decoded enums.
 - Lists default to 25 rows (max 100) with `page` / `has_more` / `total_pages`. Aggregating tools
-  read up to a hard cap and report `truncated`.
-- Counterparty names are resolved; ids stay available for follow-up calls.
+  read up to a hard cap (250 rows per page) and report `truncated`; `get_business_snapshot` lists the
+  sections cut short in `incomplete`.
+- Counterparty names are resolved; ids stay available for follow-up calls. A few names are looked
+  up one by one; when more are missing, the contact list (100 per request, hidden contacts included)
+  is read first, so a page of 100 invoices with dozens of suppliers still stays inside the rate limit.
 - Tool descriptions are English (models handle Czech conversations fine) and carry the domain hints
   from §2: DUZP, status semantics, snapshot semantics.
 - `tools/list` order is deterministic.
@@ -223,7 +226,7 @@ server.json             MCP Registry entry; the release workflow adds the MCPB p
 | warehouse | `search_products`, `get_product` | `/products` | |
 | warehouse | `get_stock_levels` | `/warehouse/statuses` | Quantity and expiry filters. |
 | warehouse | `list_orders(kind)` | `/sales_orders`, `/purchase_orders` | Filters for sales orders only. |
-| (profiles) | `list_accounts` | — | Only with `UOL_PROFILES_FILE`; never returns credentials. |
+| (accounts) | `list_accounts` | — | Only with `UOL_ACCOUNTS` or `UOL_PROFILES_FILE`; never returns credentials. |
 
 All read tools are annotated `readOnlyHint: true, idempotentHint: true, openWorldHint: true`.
 `core` + `insights` (the default) register 18 tools; `all` registers 26.
@@ -232,7 +235,7 @@ All read tools are annotated `readOnlyHint: true, idempotentHint: true, openWorl
 
 | Tool | API | Safety |
 |---|---|---|
-| `upload_document(file_path \| content_base64, note)` | `POST /uploaded_documents` (multipart) | The path must resolve (symlinks followed) inside `UOL_UPLOAD_DIRS`; PDF only (extension and `%PDF-` header); 20 MB cap. A duplicate names the existing document. |
+| `upload_document(file_path \| content_base64, note)` | `POST /uploaded_documents` (multipart) | The path must resolve (symlinks followed) inside `UOL_UPLOAD_DIRS`; over HTTP, paths are refused unless that variable is set; PDF only (extension and `%PDF-` header); 20 MB cap. A duplicate names the existing document. |
 | `create_sales_invoice` | `POST /sales_invoices` | Draft unless `issue: true`; buyer verified first; `product_id` on every line (§2 #27); auto `idempotency_key` — a repeated key returns the first invoice (`already_existed`); `dry_run` returns the payload without sending |
 | `update_sales_invoice` | `PATCH /sales_invoices/{id}` | Drafts only, checked before sending; header fields, `add_items`, `remove_item_ids` (`_destroy`), `issue: true`; only given fields are sent; `destructiveHint: true` |
 | `create_contact` | `POST /contacts` | Refuses a second contact with the same IČO unless `allow_duplicate`; address fields form the accounting address |
@@ -273,7 +276,7 @@ is registered only when the toolset it relies on is enabled)
 | `vat_check` | insights | VAT for a period, whether it is preliminary, which documents may still change it |
 | `overdue_followup` | core | Overdue receivables grouped by customer, with polite reminder drafts (never sends anything) |
 | `process_inbox` | core | Walks unprocessed uploaded documents and suggests matching purchase invoices |
-| `issue_invoice` | (v0.3, write) | Builds a sales invoice from free text, shows a dry run, creates it after confirmation |
+| `issue_invoice` | (planned, write) | Builds a sales invoice from free text, shows a dry run, creates it after confirmation |
 
 ---
 
@@ -285,14 +288,26 @@ is registered only when the toolset it relies on is enabled)
   cannot send the credentials elsewhere. Foreign download URLs (S3) are fetched without them.
 - **Least privilege:** use a dedicated UOL user with the *REST API* permission and only the
   memberships needed. Read-only access by default.
-- **Files:** downloads are written only to `UOL_DOWNLOAD_DIR` under sanitised names; uploads (v0.3)
-  are restricted to allowed directories, types and size.
-- **HTTP mode:** bearer token required unless pass-through; localhost bind; `Origin` check; no CORS.
+- **Ids and paths:** ids are validated (numbers or ASCII slugs) before they become a URL path segment,
+  so a model-supplied `..` can't turn one endpoint into another; `api_get` / `api_request` paths
+  refuse schemes, hosts, `..` and `%`.
+- **Files:** downloads are written only to `UOL_DOWNLOAD_DIR` under sanitised names (fallback names
+  built from ids included), never over an existing file, readable by the owner only; uploads are
+  restricted to allowed directories, the PDF type and 20 MB.
+- **HTTP mode:** bearer token (constant-time compare) required unless pass-through; localhost bind;
+  `Host` and `Origin` checks; no CORS; no file-path uploads unless `UOL_UPLOAD_DIRS` is set;
+  per-credential contexts so caches never cross tenants. Plain HTTP — TLS belongs to a reverse proxy.
 - **Data protection:** accounting data contains personal data (natural-person contacts, employees).
   The data goes to whatever model the user's MCP client runs; the user decides (business plans
   without training, local models, …).
-- **Supply chain:** npm trusted publishing with provenance, pinned dependencies, multi-arch images
-  with SBOM; the Docker-built catalog image is signed by Docker.
+- **Supply chain:** three runtime dependencies; npm trusted publishing with provenance; actions
+  pinned to commit SHAs; release jobs with publishing rights install with `--ignore-scripts` and keep no
+  checkout token; publishing waits for approval on the `release` environment and only admins may push
+  `v*` tags; `mcp-publisher` verified by checksum. The image is multi-arch with SBOM and provenance,
+  built on a digest-pinned base without npm / yarn / corepack.
+- **Scanning:** `npm audit` (production: high, all: critical), Trivy on the image, CodeQL
+  (`security-extended`), dependency review on pull requests, Dependabot (7-day cooldown), GitHub secret
+  scanning with push protection. Vulnerability reports: [SECURITY.md](../SECURITY.md).
 
 ---
 
@@ -309,11 +324,16 @@ is registered only when the toolset it relies on is enabled)
 **Release pipeline** (GitHub Actions, on tag `v*`):
 
 ```
-test → build → npm publish --provenance
-     → docker buildx (amd64, arm64) → ghcr.io
-     → mcpb pack → sha256 → GitHub Release asset
-     → server.json version bump → mcp-publisher publish
+verify (tag = package.json = server.json, typecheck, tests, audit)
+  → approval on the "release" environment
+      → npm publish --provenance              (skipped if the version exists)
+      → docker buildx (amd64, arm64) → ghcr.io
+      → GitHub Release + uol-mcp.mcpb         (built without write access; never overwritten)
+  → server.json + mcpb sha256 → mcp-publisher publish   (skipped if the registry has the version)
 ```
+
+The MCP Registry pins the `.mcpb` SHA-256 per version, so a published tag is never re-pushed: a fix
+ships as a new patch version.
 
 ---
 
@@ -354,7 +374,9 @@ Neither is planned for the first releases.
 | **v0.1** | Config, HTTP client + rate limit + errors, `core` read tools, stdio, fixture tests, README (EN + CS), MIT |
 | **v0.2** | `insights` tools, resources + prompts, toolsets, MCPB bundle, `server.json`, Docker image, CI and release workflows (publishing waits for the public release) |
 | **v0.3** | `upload_document`, `create_sales_invoice`, `update_sales_invoice` with idempotency / dry run / audit log; `UOL_ACCESS`; HTTP transport (single-tenant + pass-through) |
-| **v0.4** | Contacts, purchase invoices, payment demands, document workflow; `UOL_ACCESS=full` (delete, repair, generic write); `UOL_PROFILES_FILE`; `ledger`, `banking`, `warehouse` toolsets |
+| **v0.4** | Contacts, purchase invoices, payment demands, document workflow; `UOL_ACCESS=full` (delete, repair, generic write); `UOL_PROFILES_FILE`, `UOL_ACCOUNTS`; `ledger`, `banking`, `warehouse` toolsets |
+| **v0.4.1** | Security fixes from the first review, complete counterparty names on long lists, CI scans and a gated release ([CHANGELOG](../CHANGELOG.md)) |
+| next | HTTP hardening (token length, refuse public bind without `MCP_ALLOWED_HOSTS`, LRU contexts, download size cap); mark data from UOL as untrusted in the instructions; `issue_invoice` prompt; per-account access levels |
 
 ---
 

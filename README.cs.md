@@ -9,7 +9,8 @@ vydané a přijaté faktury, kdo vám dluží, nahrané doklady, kontakty.
 
 [English](README.md)
 
-**Stav:** verze 0.4, ve výchozím stavu pouze čtení, zápis lze zapnout.
+**Stav:** verze 0.4, ve výchozím stavu pouze čtení, zápis lze zapnout. Změny jednotlivých verzí
+popisuje [CHANGELOG.md](CHANGELOG.md).
 
 ## Co umí
 
@@ -84,7 +85,8 @@ popisuje [anglické README](README.md#configuration).
 
 S `UOL_ACCESS=write` (v Claude Desktop rozšíření pole „Access“ = `write`) asistent umí navíc:
 
-- **nahrát doklad** (PDF) účetní do UOL, a to jen ze složek Stažené soubory, Plocha a Dokumenty;
+- **nahrát doklad** (PDF) účetní do UOL, a to jen ze složek Stažené soubory, Plocha a Dokumenty
+  (nebo ze složek v `UOL_UPLOAD_DIRS`);
 - **vystavit fakturu** existujícímu kontaktu, standardně jako koncept;
 - **upravit nebo vystavit koncept faktury**; už vystavenou fakturu UOL měnit nedovolí;
 - **zaevidovat přijatou fakturu**, **založit nebo upravit kontakt** (s kontrolou duplicitního IČO);
@@ -99,9 +101,26 @@ Opakované vytvoření stejné faktury nevznikne dvakrát.
 
 ## Více firem (pro účetní)
 
-Jeden server obslouží víc klientských firem: v souboru `UOL_PROFILES_FILE` je seznam účtů (tenant,
-e-mail, token nebo název proměnné s tokenem). Asistent pak u každého dotazu ví, které firmy se týká,
-třeba „Kdo dluží firmě Novák?“. Formát souboru popisuje [anglické README](README.md#several-companies).
+Jeden server obslouží víc klientských firem. Účty vyjmenujete v `UOL_ACCOUNTS` a každému dáte
+vlastní proměnné, vše přímo v konfiguraci klienta:
+
+```json
+"env": {
+  "UOL_ACCOUNTS": "firma,novak",
+  "UOL_ACCOUNT_FIRMA_TENANT": "firma",
+  "UOL_ACCOUNT_FIRMA_EMAIL": "vas@email.cz",
+  "UOL_ACCOUNT_FIRMA_TOKEN": "token-firmy",
+  "UOL_ACCOUNT_NOVAK_TENANT": "novak",
+  "UOL_ACCOUNT_NOVAK_EMAIL": "vas@email.cz",
+  "UOL_ACCOUNT_NOVAK_TOKEN": "token-novaka",
+  "UOL_ACCOUNT_NOVAK_LABEL": "Novák s.r.o."
+}
+```
+
+Výchozí je první účet. Asistent pak u každého dotazu ví, které firmy se týká, třeba „Kdo dluží firmě
+Novák?“. Tokeny nemusí být v konfiguraci napsané přímo: s 1Password CLI stačí odkazy `op://…`
+a server spustit přes `op run`. Stejné nastavení jde mít i v souboru (`UOL_PROFILES_FILE`), viz
+[anglické README](README.md#several-companies).
 
 ## Soukromí a bezpečnost
 
@@ -110,7 +129,14 @@ třeba „Kdo dluží firmě Novák?“. Formát souboru popisuje [anglické REA
 - Vše, co nástroje vrátí, dostane AI model, který váš klient používá. Účetnictví obsahuje osobní
   údaje kontaktů a zaměstnanců; zvolte si takový tarif, s jehož podmínkami souhlasíte.
 - Přihlašovací údaje se posílají jen na `https://*.uol.cz` a nikdy se nezapisují do logů.
-- Stažené soubory se ukládají jen do složky `UOL_DOWNLOAD_DIR` (výchozí `~/Downloads/uol-mcp`).
+- Stažené soubory se ukládají jen do složky `UOL_DOWNLOAD_DIR` (výchozí `~/Downloads/uol-mcp`),
+  čitelné jen pro vás, a nikdy nepřepíšou existující soubor.
+
+## Zapojte se
+
+Příspěvky jsou vítané: chyby, zvláštnosti API, nové nástroje i úpravy dokumentace. Postup popisuje
+[CONTRIBUTING.md](CONTRIBUTING.md) (anglicky). Bezpečnostní problémy prosím hlaste neveřejně podle
+[SECURITY.md](SECURITY.md).
 
 ## Licence
 
