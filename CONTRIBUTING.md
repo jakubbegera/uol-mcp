@@ -49,7 +49,7 @@ don't need an account to try things. `npm run smoke` calls every tool against th
 1. Pick the toolset (`core`, `insights`, `ledger`, `banking`, `warehouse`) or the access level for writes.
 2. Declare `input` and `output` schemas; return compact, normalised data (amounts as numbers, decoded
    statuses, resolved counterparty names); page lists or report `truncated`.
-3. Add tests, then update the tool tables in [README.md](README.md) and [docs/DESIGN.md](docs/DESIGN.md),
+3. Add tests, then update the tool tables in [README.md](README.md), [README.cs.md](README.cs.md) and [docs/DESIGN.md](docs/DESIGN.md),
    the tool list in `packaging/mcpb/manifest.json`, and [CHANGELOG.md](CHANGELOG.md) under *Unreleased*.
 
 ## Pull requests
@@ -59,5 +59,6 @@ don't need an account to try things. `npm run smoke` calls every tool against th
 - CI must pass: type check, tests, `npm audit`, the Docker build with a Trivy scan, CodeQL, and
   dependency review. A new runtime dependency needs a good reason — the server deliberately has three.
 - Add a line to [CHANGELOG.md](CHANGELOG.md) under *Unreleased* for anything a user would notice.
+- `README.md` and `README.cs.md` mirror each other section by section; a change to one goes into both.
 
 By contributing you agree that your work is released under the [MIT License](LICENSE).

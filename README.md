@@ -145,7 +145,7 @@ Two modes:
   <MCP_AUTH_TOKEN>`; the server refuses to start without the token.
 - **Pass-through**: no UOL credentials in the env. Each client sends its own `X-UOL-Tenant`,
   `X-UOL-Email` and `X-UOL-Token` headers with every request; the server stores nothing.
-  `MCP_AUTH_TOKEN` is optional.
+  `MCP_AUTH_TOKEN` is optional on localhost.
 
 Over HTTP, exported invoices and downloaded documents come back inside the tool result instead of
 being saved on the server, and `upload_document` takes the file as `content_base64` — it reads no
