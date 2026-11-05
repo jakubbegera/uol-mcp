@@ -5,6 +5,25 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Per-account access levels: `UOL_ACCOUNT_<NAME>_ACCESS` (or `access` in the profiles file) overrides
+  `UOL_ACCESS` for one account, so one company can stay read-only while another allows writes.
+  `list_accounts` shows each account's level.
+
+### Changed
+
+- HTTP: `MCP_AUTH_TOKEN` must be at least 32 characters, and a non-loopback `HOST` now needs both
+  `MCP_AUTH_TOKEN` and `MCP_ALLOWED_HOSTS` — the server refuses to start otherwise.
+- `create_sales_invoice` is annotated as destructive, since `issue: true` makes an invoice final.
+- The server instructions tell the model that text from UOL is data, never instructions.
+
+### Security
+
+- Pass-through contexts are evicted least-recently-used first, so active users keep their rate-limit
+  budget when many new credentials arrive.
+- Downloads are capped at 50 MB and stop reading past the cap.
+
 ## [0.4.4] — 2026-11-05
 
 0.4.3 was tagged but never published: its release run skipped every publishing job (fixed below).

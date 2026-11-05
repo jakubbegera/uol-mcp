@@ -123,11 +123,11 @@ Desktop — the two paths that reach non-developers.
 | `UOL_DOWNLOAD_DIR` | `~/Downloads/uol-mcp` (temp dir if there is no Downloads folder) | Where export/download tools save files | 0.1 |
 | `UOL_TIMEOUT_MS` | `30000` | Per-request timeout | 0.1 |
 | `UOL_DEBUG` | off | Request log on stderr (path, status, duration; never credentials) | 0.1 |
-| `UOL_ACCESS` | `read` | `read` · `write` (adds upload / create / update) · `full` (same as write for now; will add destructive tools and generic writes) | 0.3 |
+| `UOL_ACCESS` | `read` | `read` · `write` (adds upload / create / update) · `full` (adds deletes, repairs and `api_request`) | 0.3 |
 | `UOL_TOOLSETS` | `core,insights` | Tool groups to register (§4): `core`, `insights`, `ledger`, `banking`, `warehouse`, or `all`. Unknown names are reported on stderr. | 0.2 |
 | `UOL_UPLOAD_DIRS` | `~/Downloads:~/Desktop:~/Documents` (stdio); none over HTTP | Directories `upload_document` may read from; over HTTP, `file_path` is off unless this is set | 0.3 |
 | `UOL_AUDIT_LOG` | — | JSONL file recording every write (tool, endpoint, payload hash, result id) | 0.3 |
-| `UOL_ACCOUNTS` | — | Several tenants from the environment: `a,b` plus `UOL_ACCOUNT_<NAME>_TENANT`, `_EMAIL`, `_TOKEN`, `_LABEL` (name upper-cased, `-` → `_`); `UOL_DEFAULT_ACCOUNT` or the first is the default. Fits hosts whose config is an env block, and `op run` resolving each token from an `op://` reference. Same tools as with a profiles file. | 0.4 |
+| `UOL_ACCOUNTS` | — | Several tenants from the environment: `a,b` plus `UOL_ACCOUNT_<NAME>_TENANT`, `_EMAIL`, `_TOKEN`, `_LABEL` (name upper-cased, `-` → `_`); `UOL_DEFAULT_ACCOUNT` or the first is the default; `UOL_ACCOUNT_<NAME>_ACCESS` (0.5) gives one account its own level. Fits hosts whose config is an env block, and `op run` resolving each token from an `op://` reference. Same tools as with a profiles file. | 0.4 |
 | `UOL_PROFILES_FILE` | — | JSON with several tenants (`accounts`, `default`; per account `tenant`, `email`, `token` or `token_env`, `label`). Adds `list_accounts` and, with more than one account, an `account` argument to every tool; each account keeps its own rate limiter. Replaces `UOL_TENANT`/`UOL_EMAIL`/`UOL_TOKEN`. A file with inline tokens that others can read is reported. | 0.4 |
 | `MCP_TRANSPORT` | `stdio` | `http` starts the HTTP transport (same as `--http`) | 0.3 |
 | `MCP_AUTH_TOKEN`, `PORT`, `HOST` | —, 3000, 127.0.0.1 | HTTP mode | 0.3 |
@@ -236,7 +236,7 @@ All read tools are annotated `readOnlyHint: true, idempotentHint: true, openWorl
 | Tool | API | Safety |
 |---|---|---|
 | `upload_document(file_path \| content_base64, note)` | `POST /uploaded_documents` (multipart) | The path must resolve (symlinks followed) inside `UOL_UPLOAD_DIRS`; over HTTP, paths are refused unless that variable is set; PDF only (extension and `%PDF-` header); 20 MB cap. A duplicate names the existing document. |
-| `create_sales_invoice` | `POST /sales_invoices` | Draft unless `issue: true`; buyer verified first; `product_id` on every line (§2 #27); auto `idempotency_key` — a repeated key returns the first invoice (`already_existed`); `dry_run` returns the payload without sending |
+| `create_sales_invoice` | `POST /sales_invoices` | `destructiveHint: true`, since `issue: true` makes the invoice final; draft unless `issue: true`; buyer verified first; `product_id` on every line (§2 #27); auto `idempotency_key` — a repeated key returns the first invoice (`already_existed`); `dry_run` returns the payload without sending |
 | `update_sales_invoice` | `PATCH /sales_invoices/{id}` | Drafts only, checked before sending; header fields, `add_items`, `remove_item_ids` (`_destroy`), `issue: true`; only given fields are sent; `destructiveHint: true` |
 | `create_contact` | `POST /contacts` | Refuses a second contact with the same IČO unless `allow_duplicate`; address fields form the accounting address |
 | `update_contact` | `PATCH /contacts/{id}` | Updates the accounting address by its `address_id` (or adds one); `destructiveHint: true` |
@@ -257,7 +257,9 @@ All read tools are annotated `readOnlyHint: true, idempotentHint: true, openWorl
 **Write safety, in layers:** off by default → annotations make the host ask for approval → tool
 descriptions tell the model to show the payload and get the user's confirmation → `dry_run` →
 idempotency keys → audit log. Invoice texts, document notes and contact names are untrusted input
-(prompt-injection vector), which is a further reason to keep writes opt-in.
+(prompt-injection vector), which is a further reason to keep writes opt-in; the server instructions
+tell the model so. With several accounts, tools are registered for the highest level any account has
+and every call checks the level of the account it targets (`UOL_ACCOUNT_<NAME>_ACCESS`).
 
 ---
 
@@ -294,9 +296,11 @@ is registered only when the toolset it relies on is enabled)
 - **Files:** downloads are written only to `UOL_DOWNLOAD_DIR` under sanitised names (fallback names
   built from ids included), never over an existing file, readable by the owner only; uploads are
   restricted to allowed directories, the PDF type and 20 MB.
-- **HTTP mode:** bearer token (constant-time compare) required unless pass-through; localhost bind;
-  `Host` and `Origin` checks; no CORS; no file-path uploads unless `UOL_UPLOAD_DIRS` is set;
-  per-credential contexts so caches never cross tenants. Plain HTTP — TLS belongs to a reverse proxy.
+- **HTTP mode:** bearer token of at least 32 characters (constant-time compare), required in
+  single-tenant mode and on any non-loopback bind, which also needs `MCP_ALLOWED_HOSTS`; localhost bind
+  by default; `Host` and `Origin` checks; no CORS; no file-path uploads unless `UOL_UPLOAD_DIRS` is set;
+  per-credential contexts (least recently used evicted first) so caches never cross tenants; downloads
+  capped at 50 MB. Plain HTTP — TLS belongs to a reverse proxy.
 - **Data protection:** accounting data contains personal data (natural-person contacts, employees).
   The data goes to whatever model the user's MCP client runs; the user decides (business plans
   without training, local models, …).
@@ -377,7 +381,8 @@ Neither is planned for the first releases.
 | **v0.3** | `upload_document`, `create_sales_invoice`, `update_sales_invoice` with idempotency / dry run / audit log; `UOL_ACCESS`; HTTP transport (single-tenant + pass-through) |
 | **v0.4** | Contacts, purchase invoices, payment demands, document workflow; `UOL_ACCESS=full` (delete, repair, generic write); `UOL_PROFILES_FILE`, `UOL_ACCOUNTS`; `ledger`, `banking`, `warehouse` toolsets |
 | **v0.4.1** | Security fixes from the first review, complete counterparty names on long lists, CI scans and a gated release ([CHANGELOG](../CHANGELOG.md)) |
-| next | HTTP hardening (token length, refuse public bind without `MCP_ALLOWED_HOSTS`, LRU contexts, download size cap); mark data from UOL as untrusted in the instructions; `issue_invoice` prompt; per-account access levels |
+| **v0.5** | HTTP hardening (token length, no public bind without token and `MCP_ALLOWED_HOSTS`, LRU contexts, 50 MB download cap); data from UOL marked untrusted in the instructions; per-account access levels |
+| next | `issue_invoice` prompt; live tests of repairs, deletes and tags on a tenant with those rights |
 
 ---
 

@@ -2,7 +2,7 @@ import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
 import { InputError } from '../domain/uploads.js';
 import { invoiceStatus, stripNoise, str } from '../uol/normalize.js';
-import { type ToolContext, registerTool } from './context.js';
+import { type ToolContext, registerFullTool } from './context.js';
 import { isoDate } from './schemas.js';
 import { CONFIRM_FIRST, DESTRUCTIVE, auditedWrite } from './write-support.js';
 
@@ -14,7 +14,7 @@ import { CONFIRM_FIRST, DESTRUCTIVE, auditedWrite } from './write-support.js';
 const API_PATH = /^\/?v1\/[a-z0-9_/{}.-]*$/i;
 
 export function registerDestructiveTools(server: McpServer, ctx: ToolContext): void {
-  registerTool(
+  registerFullTool(
     server,
     ctx,
     'delete_sales_invoice',
@@ -48,7 +48,7 @@ export function registerDestructiveTools(server: McpServer, ctx: ToolContext): v
     },
   );
 
-  registerTool(
+  registerFullTool(
     server,
     ctx,
     'repair_sales_invoice',
@@ -99,7 +99,7 @@ export function registerDestructiveTools(server: McpServer, ctx: ToolContext): v
     },
   );
 
-  registerTool(
+  registerFullTool(
     server,
     ctx,
     'api_request',

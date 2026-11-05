@@ -31,6 +31,8 @@ export interface HttpOptions {
 
 const LOCAL_NAMES = ['localhost', '127.0.0.1', '[::1]', '::1'];
 const MAX_CONTEXTS = 100;
+/** 32 characters, e.g. `openssl rand -hex 16`; shorter tokens are guessable. */
+const MIN_AUTH_TOKEN_LENGTH = 32;
 const CONTEXT_TTL_MS = 30 * 60_000;
 
 export const HEADER = {
@@ -70,8 +72,22 @@ export function createHttpHandler(baseConfig: AppConfig, options: HttpOptions, d
     uploadDirs: baseConfig.explicitUploadDirs ? baseConfig.uploadDirs : [],
   };
   const mode = httpMode(config);
+  const loopback = LOCAL_NAMES.includes(options.host);
   if (mode === 'single-tenant' && !options.authToken) {
     throw new ConfigError('MCP_AUTH_TOKEN is required when the HTTP server holds UOL credentials');
+  }
+  if (options.authToken && options.authToken.length < MIN_AUTH_TOKEN_LENGTH) {
+    throw new ConfigError(
+      `MCP_AUTH_TOKEN must be at least ${MIN_AUTH_TOKEN_LENGTH} characters; generate one with \`openssl rand -hex 32\``,
+    );
+  }
+  // Beyond localhost, anyone who can reach the port could otherwise use the server (or flood its
+  // per-user contexts), and without a Host allowlist DNS rebinding could reach it from a browser.
+  if (!loopback && !options.authToken) {
+    throw new ConfigError(`HOST ${options.host} is not a loopback address; set MCP_AUTH_TOKEN`);
+  }
+  if (!loopback && !options.allowedHosts?.length) {
+    throw new ConfigError(`HOST ${options.host} is not a loopback address; set MCP_ALLOWED_HOSTS to the host names clients use`);
   }
 
   const shared = mode === 'single-tenant' ? createContext(config, deps) : undefined;
@@ -87,13 +103,16 @@ export function createHttpHandler(baseConfig: AppConfig, options: HttpOptions, d
     const key = createHash('sha256').update(`${baseUrl}\n${email}\n${token}`).digest('hex');
     const now = Date.now();
     for (const [k, v] of contexts) if (now - v.used > CONTEXT_TTL_MS) contexts.delete(k);
+    // Least recently used first: a reused entry moves to the end, eviction takes the front.
     let entry = contexts.get(key);
-    if (!entry) {
+    if (entry) {
+      contexts.delete(key);
+    } else {
       if (contexts.size >= MAX_CONTEXTS) contexts.delete(contexts.keys().next().value!);
       entry = { ctx: createContext({ ...config, credentials: { baseUrl, email, token, isDemo } }, deps), used: now };
-      contexts.set(key, entry);
     }
     entry.used = now;
+    contexts.set(key, entry);
     return entry.ctx;
   };
 
@@ -101,8 +120,7 @@ export function createHttpHandler(baseConfig: AppConfig, options: HttpOptions, d
     createMcpHandler(({ requestInfo }) => createServer(contextFor(requestInfo?.headers ?? new Headers()))),
   );
 
-  const loopback = LOCAL_NAMES.includes(options.host);
-  const allowedHosts = options.allowedHosts ?? (loopback ? LOCAL_NAMES : undefined);
+  const allowedHosts = options.allowedHosts ?? LOCAL_NAMES;
   const allowedOrigins = options.allowedOrigins ?? LOCAL_NAMES;
 
   return async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
@@ -111,7 +129,7 @@ export function createHttpHandler(baseConfig: AppConfig, options: HttpOptions, d
     if (path !== '/mcp') return send(res, 404, { error: 'not_found', message: 'The MCP endpoint is /mcp' });
 
     const host = hostname(req.headers.host);
-    if (allowedHosts && (!host || !allowedHosts.includes(host))) {
+    if (!host || !allowedHosts.includes(host)) {
       return send(res, 403, { error: 'forbidden_host', message: `Host ${req.headers.host ?? ''} is not allowed` });
     }
     const origin = req.headers.origin;

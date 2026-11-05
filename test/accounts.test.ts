@@ -150,3 +150,59 @@ describe('multi-account tools', () => {
     expect(JSON.stringify(unknown.content)).toMatch(/expected one of/);
   });
 });
+
+describe('per-account access', () => {
+  const env = {
+    UOL_ACCESS: 'write',
+    UOL_ACCOUNTS: 'hc,jb',
+    UOL_ACCOUNT_HC_TENANT: 'demo',
+    UOL_ACCOUNT_JB_TENANT: 'demo',
+    UOL_ACCOUNT_JB_ACCESS: 'read',
+  };
+
+  it('lets a read-only account read but refuses its writes before sending anything', async () => {
+    // arrange
+    const { fetch, requests } = fakeUolFetch();
+    client = await connect(loadConfig({ ...env, UOL_DOWNLOAD_DIR: tmpdir() }), fetch);
+    const writes = () => requests.filter((r) => r.method !== 'GET' && r.method !== 'HEAD');
+
+    // act
+    const listed = await client.callTool({ name: 'list_accounts', arguments: {} });
+    const read = await client.callTool({ name: 'get_company', arguments: { account: 'jb' } });
+    const refused = await client.callTool({
+      name: 'create_contact',
+      arguments: { account: 'jb', name: 'Nový odběratel', allow_duplicate: true },
+    });
+    const allowed = await client.callTool({
+      name: 'create_contact',
+      arguments: { account: 'hc', name: 'Nový odběratel', allow_duplicate: true, dry_run: true },
+    });
+
+    // assert
+    expect((listed.structuredContent as { accounts: { name: string; access: string }[] }).accounts).toMatchObject([
+      { name: 'hc', access: 'write' },
+      { name: 'jb', access: 'read' },
+    ]);
+    expect(read.isError).toBeFalsy();
+    expect(refused.isError).toBe(true);
+    expect(JSON.stringify(refused.content)).toMatch(/needs write access, but account \\"jb\\" allows only read/);
+    expect(allowed.isError).toBeFalsy();
+    expect(writes()).toEqual([]);
+  });
+
+  it('registers write tools when any account may write', async () => {
+    // arrange
+    client = await connect(loadConfig({ ...env, UOL_ACCESS: 'read', UOL_ACCOUNT_HC_ACCESS: 'write' }));
+
+    // act
+    const { tools } = await client.listTools();
+
+    // assert
+    expect(tools.map((t) => t.name)).toContain('create_contact');
+    expect(tools.map((t) => t.name)).not.toContain('delete_sales_invoice');
+  });
+
+  it('reports an unknown access level', () => {
+    expect(loadConfig({ ...env, UOL_ACCOUNT_JB_ACCESS: 'admin' }).configError).toMatch(/UOL_ACCOUNT_JB_ACCESS must be one of/);
+  });
+});

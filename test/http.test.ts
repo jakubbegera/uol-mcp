@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DEMO } from '../src/config.js';
 import { errorFromResponse } from '../src/uol/errors.js';
-import { UolHttp, fileNameFromContentDisposition } from '../src/uol/http.js';
+import { MAX_DOWNLOAD_BYTES, UolHttp, fileNameFromContentDisposition } from '../src/uol/http.js';
 import { RateLimiter, bucketFor } from '../src/uol/rate-limit.js';
 import { fakeUolFetch, fixture } from './support/fake-uol.js';
 
@@ -132,6 +132,33 @@ describe('UolHttp', () => {
 
     // assert
     expect(error).toMatchObject({ status: 404, code: '0004' });
+  });
+
+  it.each([
+    ['announced by Content-Length', true],
+    ['found while reading the body', false],
+  ])('refuses a download larger than the cap (%s)', async (_case, announce) => {
+    // arrange
+    // An endless body: the test only finishes if the download stops at the cap.
+    const chunk = new Uint8Array(1024 * 1024);
+    let cancelled = false;
+    const body = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        controller.enqueue(chunk);
+      },
+      cancel() {
+        cancelled = true;
+      },
+    });
+    const headers = announce ? { 'content-length': String(MAX_DOWNLOAD_BYTES + 1) } : undefined;
+    const http = new UolHttp(credentials, { fetch: async () => new Response(body, { status: 200, headers }) });
+
+    // act
+    const error = await http.getBinary(`${DEMO.baseUrl}/v1/sales_invoices/1`, 'application/pdf').catch((e: unknown) => e);
+
+    // assert
+    expect(error).toMatchObject({ status: 413, code: 'file_too_large' });
+    expect(cancelled).toBe(true);
   });
 });
 

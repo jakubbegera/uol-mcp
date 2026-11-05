@@ -67,7 +67,7 @@ Want to try it first? `UOL_TENANT=demo` uses UOL's public DEMO company, no token
 | `UOL_DOWNLOAD_DIR` | Where exported and downloaded files go (default `~/Downloads/uol-mcp`) |
 | `UOL_TOOLSETS` | Comma-separated: `core`, `insights` (these two are the default), `ledger`, `banking`, `warehouse`, or `all` |
 | `UOL_ACCESS` | `read` (default), `write` or `full` — see [Writing](#writing-opt-in) |
-| `UOL_ACCOUNTS`, `UOL_DEFAULT_ACCOUNT` | Several companies in one server — see [Several companies](#several-companies) |
+| `UOL_ACCOUNTS`, `UOL_DEFAULT_ACCOUNT` | Several companies in one server — see [Several companies](#several-companies); `UOL_ACCOUNT_<NAME>_ACCESS` sets one account's level |
 | `UOL_PROFILES_FILE` | The same from a JSON file |
 | `UOL_UPLOAD_DIRS` | Folders `upload_document` may read from (default `~/Downloads`, `~/Desktop`, `~/Documents`; `:`-separated, `;` on Windows). The HTTP server has no default: without this variable it accepts only `content_base64` |
 | `UOL_AUDIT_LOG` | File that records every write as a JSON line |
@@ -135,7 +135,7 @@ form; the token is stored as a secret. `bash scripts/build-mcpb.sh` builds the b
 ### HTTP server (self-hosting)
 
 ```bash
-MCP_TRANSPORT=http MCP_AUTH_TOKEN=change-me UOL_TENANT=firma UOL_EMAIL=you@example.com UOL_TOKEN=your-token npx -y uol-mcp
+MCP_TRANSPORT=http MCP_AUTH_TOKEN=$(openssl rand -hex 32) UOL_TENANT=firma UOL_EMAIL=you@example.com UOL_TOKEN=your-token npx -y uol-mcp
 ```
 
 The endpoint is `http://127.0.0.1:3000/mcp` (`HOST`, `PORT` to change; `/health` for probes).
@@ -150,18 +150,19 @@ Two modes:
 Over HTTP, exported invoices and downloaded documents come back inside the tool result instead of
 being saved on the server, and `upload_document` takes the file as `content_base64` — it reads no
 paths on the server unless `UOL_UPLOAD_DIRS` is set. In Docker, bind to all interfaces and publish the
-port: `docker run -p 3000:3000 -e MCP_TRANSPORT=http -e HOST=0.0.0.0 -e MCP_ALLOWED_HOSTS=mcp.example.com …`.
+port: `docker run -p 3000:3000 -e MCP_TRANSPORT=http -e HOST=0.0.0.0 -e MCP_AUTH_TOKEN=… -e MCP_ALLOWED_HOSTS=mcp.example.com …`.
 
 | Variable | Meaning |
 |---|---|
 | `MCP_TRANSPORT` | `http` starts the HTTP server (same as `--http`) |
 | `HOST`, `PORT` | Bind address, default `127.0.0.1:3000` |
-| `MCP_AUTH_TOKEN` | Bearer token clients must send; required in one-tenant mode, recommended in pass-through |
-| `MCP_ALLOWED_HOSTS` | Accepted `Host` names (comma-separated) when not bound to localhost |
+| `MCP_AUTH_TOKEN` | Bearer token clients must send, at least 32 characters; required in one-tenant mode and whenever `HOST` is not a loopback address |
+| `MCP_ALLOWED_HOSTS` | Accepted `Host` names (comma-separated); required when `HOST` is not a loopback address |
 | `MCP_ALLOWED_ORIGINS` | Browser origins allowed to call the endpoint (none by default) |
 
 The server speaks plain HTTP: anywhere beyond localhost, put it behind a reverse proxy that
-terminates TLS, and use a long random `MCP_AUTH_TOKEN`.
+terminates TLS. The server refuses to start on a non-loopback address without `MCP_AUTH_TOKEN` and
+`MCP_ALLOWED_HOSTS`.
 
 ### Check the setup
 
@@ -230,6 +231,10 @@ Alternatively, point `UOL_PROFILES_FILE` at a JSON file:
 takes an `account` argument — *"Kdo dluží firmě Novák?"* goes to the right tenant. Each account keeps
 its own rate limit.
 
+Accounts can have their own access level: with `UOL_ACCESS=write` and `UOL_ACCOUNT_NOVAK_ACCESS=read`
+(or `"access": "read"` in the profiles file), writes to Novák are refused while the other account can
+still write. `list_accounts` shows each account's level.
+
 ## Privacy and safety
 
 - Read-only unless you set `UOL_ACCESS=write`. Text inside invoices, notes and documents is treated
@@ -237,7 +242,8 @@ its own rate limit.
 - Whatever the tools return goes to the AI model your client uses. Accounting data contains personal
   data of your contacts and employees — use a plan whose terms you are comfortable with.
 - Credentials are used only for `https://*.uol.cz` and are never written to logs or tool output.
-- Downloaded files are saved under `UOL_DOWNLOAD_DIR` only, readable by the owner, and never replace an existing file (a taken name gets a ` (1)` suffix).
+- Downloaded files are saved under `UOL_DOWNLOAD_DIR` only, readable by the owner, and never replace an existing file (a taken name gets a ` (1)` suffix). Downloads over 50 MB are refused.
+- The model is told that text coming from UOL (invoices, notes, documents) is data, never instructions.
 
 ## From source
 

@@ -117,7 +117,9 @@ vlastní proměnné, vše přímo v konfiguraci klienta:
 }
 ```
 
-Výchozí je první účet. Asistent pak u každého dotazu ví, které firmy se týká, třeba „Kdo dluží firmě
+Výchozí je první účet. Každý účet může mít vlastní úroveň přístupu, třeba
+`"UOL_ACCOUNT_NOVAK_ACCESS": "read"`: do firmy Novák pak asistent nic nezapíše, i když jinde zapisovat
+smí. Asistent pak u každého dotazu ví, které firmy se týká, třeba „Kdo dluží firmě
 Novák?“. Tokeny nemusí být v konfiguraci napsané přímo: s 1Password CLI stačí odkazy `op://…`
 a server spustit přes `op run`. Stejné nastavení jde mít i v souboru (`UOL_PROFILES_FILE`), viz
 [anglické README](README.md#several-companies).

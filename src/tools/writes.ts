@@ -9,7 +9,7 @@ import { hrefId, str } from '../uol/normalize.js';
 import { type ToolContext, type UolSession, registerTool } from './context.js';
 import { commonDetail, detailOf, salesRow, salesRowOf } from './invoices.js';
 import { isoDate, party } from './schemas.js';
-import { CONFIRM_FIRST, WRITE, compact, tenantOf } from './write-support.js';
+import { CONFIRM_FIRST, DESTRUCTIVE, WRITE, compact, tenantOf } from './write-support.js';
 
 /*
  * Write tools — registered only with UOL_ACCESS=write (or full). Every write
@@ -202,7 +202,8 @@ export function registerWriteTools(server: McpServer, ctx: ToolContext): void {
         invoice: invoiceOutput.nullable(),
       }),
     },
-    { ...WRITE, idempotentHint: true },
+    // issue=true makes the invoice final (only a storno undoes it), so clients treat it as destructive.
+    { ...DESTRUCTIVE, idempotentHint: true },
     async (args, session) => {
       const { client, config } = session;
       const buyer = await client.contact(args.buyer_id).catch((error: unknown) => {

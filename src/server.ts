@@ -1,6 +1,6 @@
 import { createRequire } from 'node:module';
 import { McpServer } from '@modelcontextprotocol/server';
-import { type AppConfig, ConfigError, DEFAULT_TOOLSETS, type UolCredentials } from './config.js';
+import { type AppConfig, ConfigError, DEFAULT_TOOLSETS, type UolCredentials, accessOf, highestAccess } from './config.js';
 import { InputError } from './domain/uploads.js';
 import { INSTRUCTIONS } from './instructions.js';
 import { registerPrompts } from './prompts.js';
@@ -43,6 +43,11 @@ export function createContext(config: AppConfig, deps: Dependencies = {}): ToolC
   return {
     config,
     now: deps.now ?? (() => new Date()),
+    accessFor(account?: string) {
+      if (!config.accounts?.length) return { access: accessOf(config) };
+      const name = account ?? config.defaultAccount;
+      return { account: name, access: accessOf(config, config.accounts.find((a) => a.name === name)) };
+    },
     session(account?: string) {
       if (config.configError) throw new ConfigError(config.configError);
       const { key, credentials } = pickAccount(config, account);
@@ -98,12 +103,14 @@ export function createServer(ctx: ToolContext): McpServer {
   if (toolsets.has('ledger')) registerLedgerTools(server, ctx);
   if (toolsets.has('banking')) registerBankingTools(server, ctx);
   if (toolsets.has('warehouse')) registerWarehouseTools(server, ctx);
-  if (ctx.config.access === 'write' || ctx.config.access === 'full') {
+  // Registered for the highest level any account has; each call checks its own account's level.
+  const access = highestAccess(ctx.config);
+  if (access === 'write' || access === 'full') {
     registerWriteTools(server, ctx);
     registerRecordWriteTools(server, ctx);
     registerDocumentWriteTools(server, ctx);
   }
-  if (ctx.config.access === 'full') registerDestructiveTools(server, ctx);
+  if (access === 'full') registerDestructiveTools(server, ctx);
   registerResources(server, ctx);
   registerPrompts(server, toolsets);
   return server;

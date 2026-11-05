@@ -26,14 +26,15 @@ Environment:
   UOL_UPLOAD_DIRS    folders upload_document may read from
   UOL_AUDIT_LOG      JSONL file recording every write
   UOL_TOOLSETS       core, insights (default), ledger, banking, warehouse or all
-  UOL_ACCOUNTS       several tenants: a,b plus UOL_ACCOUNT_A_TENANT / _EMAIL / _TOKEN / _LABEL
+  UOL_ACCOUNTS       several tenants: a,b plus UOL_ACCOUNT_A_TENANT / _EMAIL / _TOKEN / _LABEL / _ACCESS
   UOL_PROFILES_FILE  several tenants from a JSON file instead
   UOL_DEBUG=1        log requests to stderr
 
 HTTP (--http or MCP_TRANSPORT=http):
   HOST, PORT         bind address, default 127.0.0.1:3000
-  MCP_AUTH_TOKEN     bearer token clients must send; required when UOL_* credentials are set
-  MCP_ALLOWED_HOSTS  accepted Host names (comma-separated) when not bound to localhost
+  MCP_AUTH_TOKEN     bearer token clients must send (32+ characters); required when UOL_* credentials
+                     are set or HOST is not a loopback address
+  MCP_ALLOWED_HOSTS  accepted Host names (comma-separated); required when HOST is not a loopback address
   Without UOL_* credentials every request brings X-UOL-Tenant, X-UOL-Email, X-UOL-Token.
 `;
 

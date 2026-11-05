@@ -6,7 +6,7 @@ import type {
   ToolAnnotations,
 } from '@modelcontextprotocol/server';
 import { type z, z as zod } from 'zod';
-import { type AppConfig, ConfigError, SETUP_HINT } from '../config.js';
+import { type Access, type AppConfig, ConfigError, SETUP_HINT, allows } from '../config.js';
 import { ContactNames } from '../domain/contact-names.js';
 import { UnpaidReceivables } from '../domain/receivables.js';
 import { InputError } from '../domain/uploads.js';
@@ -38,6 +38,8 @@ export interface ToolContext {
    * usable credentials and [InputError] for an unknown account.
    */
   session(account?: string): UolSession;
+  /** The access level of [account] (or the default one): its own, else UOL_ACCESS. */
+  accessFor(account?: string): { account?: string; access: Access };
   now(): Date;
 }
 
@@ -85,6 +87,7 @@ export function registerTool<I extends z.ZodObject, O extends z.ZodObject>(
   def: ToolDefinition<I, O>,
   annotations: Omit<ToolAnnotations, 'title'>,
   run: (args: z.output<I>, session: UolSession) => Promise<ToolOutput<z.output<O>>>,
+  needs: Access = annotations.readOnlyHint ? 'read' : 'write',
 ): void {
   // With several accounts every tool takes `account`; the wrapper picks the session.
   const accounts = ctx.config.accounts ?? [];
@@ -103,6 +106,13 @@ export function registerTool<I extends z.ZodObject, O extends z.ZodObject>(
   const handler = async (args: unknown): Promise<CallToolResult> => {
     try {
       const account = (args as { account?: string }).account;
+      // Tools are registered for the highest level any account has; each call checks its own account.
+      const granted = ctx.accessFor(account);
+      if (!allows(granted.access, needs)) {
+        throw new InputError(
+          `${name} needs ${needs} access, but account "${granted.account}" allows only ${granted.access}.`,
+        );
+      }
       const { data, extra } = await run(args as z.output<I>, ctx.session(account));
       return {
         content: [{ type: 'text', text: JSON.stringify(data) }, ...(extra ?? [])],
@@ -131,4 +141,16 @@ export function describeError(error: unknown): string {
   if (error instanceof UolApiError) return `UOL API error (HTTP ${error.status}, ${error.code}): ${error.message}`;
   if (error instanceof Error) return `Unexpected error: ${error.message}`;
   return `Unexpected error: ${String(error)}`;
+}
+
+/** Registers a tool only accounts with `full` access may run: deletes, repairs, raw writes. */
+export function registerFullTool<I extends z.ZodObject, O extends z.ZodObject>(
+  server: McpServer,
+  ctx: ToolContext,
+  name: string,
+  def: ToolDefinition<I, O>,
+  annotations: Omit<ToolAnnotations, 'title'>,
+  run: (args: z.output<I>, session: UolSession) => Promise<ToolOutput<z.output<O>>>,
+): void {
+  registerTool(server, ctx, name, def, annotations, run, 'full');
 }

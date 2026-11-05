@@ -4,7 +4,7 @@ import type { Server } from 'node:http';
 import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client';
 import { afterEach, describe, expect, it } from 'vitest';
 import { type AppConfig, loadConfig } from '../src/config.js';
-import { type HttpOptions, startHttpServer } from '../src/http.js';
+import { type HttpOptions, createHttpHandler, startHttpServer } from '../src/http.js';
 import { fakeUolFetch } from './support/fake-uol.js';
 
 let server: Server | undefined;
@@ -15,6 +15,8 @@ afterEach(async () => {
   client = undefined;
   server = undefined;
 });
+
+const TOKEN = 'a'.repeat(32);
 
 async function start(config: AppConfig, options: Partial<HttpOptions> = {}) {
   const { fetch, requests } = fakeUolFetch();
@@ -132,13 +134,13 @@ describe('single-tenant mode', () => {
 
   it('requires the bearer token and refuses per-request credentials', async () => {
     // arrange
-    const { url } = await start(loadConfig({ UOL_TENANT: 'demo' }), { authToken: 's3cret' });
+    const { url } = await start(loadConfig({ UOL_TENANT: 'demo' }), { authToken: TOKEN });
 
     // act
     const missing = await post(url, {});
     const wrong = await post(url, { authorization: 'Bearer nope' });
-    const smuggled = await post(url, { authorization: 'Bearer s3cret', 'x-uol-tenant': 'other' });
-    const mcp = await connect(url, { Authorization: 'Bearer s3cret' });
+    const smuggled = await post(url, { authorization: `Bearer ${TOKEN}`, 'x-uol-tenant': 'other' });
+    const mcp = await connect(url, { Authorization: `Bearer ${TOKEN}` });
     const tools = await mcp.listTools();
 
     // assert
@@ -147,5 +149,21 @@ describe('single-tenant mode', () => {
     expect(wrong.status).toBe(401);
     expect(smuggled.status).toBe(400);
     expect(tools.tools.length).toBeGreaterThan(0);
+  });
+});
+
+describe('startup rules', () => {
+  it.each([
+    [{ host: '127.0.0.1', authToken: 'short' }, /at least 32 characters/],
+    [{ host: '0.0.0.0', allowedHosts: ['mcp.example.com'] }, /not a loopback address; set MCP_AUTH_TOKEN/],
+    [{ host: '0.0.0.0', authToken: TOKEN }, /set MCP_ALLOWED_HOSTS/],
+  ])('refuses %j', (options, message) => {
+    expect(() => createHttpHandler(loadConfig({}), { port: 0, ...options })).toThrow(message);
+  });
+
+  it('starts on a public address with a token and a host allowlist', () => {
+    expect(() =>
+      createHttpHandler(loadConfig({}), { host: '0.0.0.0', port: 0, authToken: TOKEN, allowedHosts: ['mcp.example.com'] }),
+    ).not.toThrow();
   });
 });

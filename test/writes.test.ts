@@ -58,7 +58,7 @@ describe('access levels', () => {
     );
     expect(writes).toEqual({
       upload_document: false,
-      create_sales_invoice: false,
+      create_sales_invoice: true,
       update_sales_invoice: true,
       create_contact: false,
       update_contact: true,

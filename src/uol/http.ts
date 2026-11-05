@@ -101,7 +101,7 @@ export class UolHttp {
   async getBinary(url: string, accept?: string): Promise<BinaryResponse> {
     const response = await this.send(url, { accept, auth: this.isOwnUrl(url) });
     return {
-      bytes: Buffer.from(await response.arrayBuffer()),
+      bytes: await readCapped(response, MAX_DOWNLOAD_BYTES),
       contentType: response.headers.get('content-type') ?? 'application/octet-stream',
       fileName: fileNameFromContentDisposition(response.headers.get('content-disposition')),
     };
@@ -238,4 +238,32 @@ function latin1ToUtf8(value: string): string {
   if (!/[\u0080-ÿ]/.test(value) || /[^\u0000-ÿ]/.test(value)) return value;
   const decoded = Buffer.from(value, 'latin1').toString('utf8');
   return decoded.includes('�') ? value : decoded;
+}
+
+/** Largest file a download reads into memory; UOL documents are a few MB at most. */
+export const MAX_DOWNLOAD_BYTES = 50 * 1024 * 1024;
+
+/** Reads the body, refusing anything past [limit] instead of buffering it all. */
+async function readCapped(response: Response, limit: number): Promise<Buffer> {
+  const tooLarge = () =>
+    new UolApiError(`The file is larger than ${limit / 1024 / 1024} MB; download it in UOL instead.`, 413, 'file_too_large');
+  if (Number(response.headers.get('content-length')) > limit) {
+    await response.body?.cancel();
+    throw tooLarge();
+  }
+  if (!response.body) return Buffer.alloc(0);
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) return Buffer.concat(chunks);
+    size += value.byteLength;
+    if (size > limit) {
+      // Cancelling stops the transfer, so the rest is never downloaded.
+      await reader.cancel();
+      throw tooLarge();
+    }
+    chunks.push(value);
+  }
 }

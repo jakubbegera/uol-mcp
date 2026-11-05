@@ -26,11 +26,38 @@ export const DEFAULT_TOOLSETS: readonly Toolset[] = ['core', 'insights'];
 export const ACCESS_LEVELS = ['read', 'write', 'full'] as const;
 export type Access = (typeof ACCESS_LEVELS)[number];
 
+/** Whether [granted] covers [needed]: read < write < full. */
+export function allows(granted: Access, needed: Access): boolean {
+  return ACCESS_LEVELS.indexOf(granted) >= ACCESS_LEVELS.indexOf(needed);
+}
+
+/** An account's own access level, falling back to UOL_ACCESS. */
+export function accessOf(config: AppConfig, account?: Account): Access {
+  return account?.access ?? config.access ?? 'read';
+}
+
+/** The highest level any account has: decides which tools are registered at all. */
+export function highestAccess(config: AppConfig): Access {
+  const levels = config.accounts?.length ? config.accounts.map((a) => accessOf(config, a)) : [accessOf(config)];
+  return levels.reduce((best, level) => (allows(level, best) ? level : best), 'read' as Access);
+}
+
+function parseAccess(raw: string | undefined, name: string): Access | undefined {
+  if (raw === undefined) return undefined;
+  const level = raw.toLowerCase();
+  if (!(ACCESS_LEVELS as readonly string[]).includes(level)) {
+    throw new ConfigError(`${name} must be one of ${ACCESS_LEVELS.join(', ')}, got "${raw}"`);
+  }
+  return level as Access;
+}
+
 /** One named UOL tenant from UOL_PROFILES_FILE. */
 export interface Account {
   name: string;
   label?: string;
   credentials: UolCredentials;
+  /** Overrides UOL_ACCESS for this account; a level above it still needs the tools registered. */
+  access?: Access;
 }
 
 export interface AppConfig {
@@ -241,7 +268,12 @@ export function accountsFromEnv(list: string, env: NodeJS.ProcessEnv): { account
       `${prefix}TENANT`,
       `${prefix}EMAIL and ${prefix}TOKEN`,
     );
-    return { name, label: value(env[`${prefix}LABEL`]), credentials };
+    return {
+      name,
+      label: value(env[`${prefix}LABEL`]),
+      credentials,
+      access: parseAccess(value(env[`${prefix}ACCESS`]), `${prefix}ACCESS`),
+    };
   });
   const defaultAccount = value(env.UOL_DEFAULT_ACCOUNT)?.toLowerCase() ?? names[0]!;
   if (!names.includes(defaultAccount)) {
@@ -292,7 +324,7 @@ export function loadProfiles(
     const token = text('token') ?? (tokenEnv ? value(env[tokenEnv]) : undefined);
     if (tokenEnv && !token) throw new ConfigError(`UOL_PROFILES_FILE: account "${name}" reads its token from ${tokenEnv}, which is not set`);
     const credentials = credentialsFor(text('tenant'), text('email'), token, `account "${name}": tenant`, `account "${name}": email and token`);
-    return { name, label: text('label'), credentials };
+    return { name, label: text('label'), credentials, access: parseAccess(text('access'), `account "${name}": access`) };
   });
 
   const defaultAccount = typeof root.default === 'string' ? root.default : accounts[0]!.name;

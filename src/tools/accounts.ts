@@ -1,8 +1,9 @@
 import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
+import { accessOf } from '../config.js';
 import { type ToolContext, registerReadTool } from './context.js';
 
-/** Registered only with UOL_PROFILES_FILE; lists the accounts without their credentials. */
+/** Registered only with several accounts (UOL_ACCOUNTS / UOL_PROFILES_FILE); never returns credentials. */
 export function registerAccountTools(server: McpServer, ctx: ToolContext): void {
   const accounts = ctx.config.accounts ?? [];
   registerReadTool(
@@ -23,6 +24,7 @@ export function registerAccountTools(server: McpServer, ctx: ToolContext): void 
             tenant: z.string().describe('UOL host'),
             demo: z.boolean(),
             default: z.boolean(),
+            access: z.enum(['read', 'write', 'full']).describe('What tools may do for this account'),
           }),
         ),
       }),
@@ -36,6 +38,7 @@ export function registerAccountTools(server: McpServer, ctx: ToolContext): void 
           tenant: new URL(a.credentials.baseUrl).host,
           demo: a.credentials.isDemo,
           default: a.name === ctx.config.defaultAccount,
+          access: accessOf(ctx.config, a),
         })),
       },
     }),
