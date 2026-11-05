@@ -1,4 +1,5 @@
 import type { RawInternalDocument, RawPurchaseInvoice, RawSalesInvoice, UolClient } from '../uol/client.js';
+import { UolApiError } from '../uol/errors.js';
 import { amount, daysBetween, money, refId, str } from '../uol/normalize.js';
 import { fetchPages } from './paging.js';
 
@@ -9,10 +10,12 @@ import { fetchPages } from './paging.js';
  *     internal document with `note = "DPH …"` whose `Výstup …%` / `Vstup …%`
  *     lines are the final output / input VAT. Exact; covers internal
  *     documents and reverse charge too.
- *  2. An **estimate from invoices** for periods not closed yet: VAT amounts of
- *     issued sales and purchase invoices by DUZP. Proformas and non-tax
- *     documents are skipped; corrective invoices are counted as credit notes —
- *     UOL reports their amounts as positive numbers.
+ *  2. An **estimate from invoices** for periods not closed yet: output VAT of
+ *     issued sales invoices by DUZP, input VAT of received invoices in the
+ *     period of the later of DUZP and the receipt date (the deduction can be
+ *     claimed only once the document is in hand — UOL's own VAT report does the
+ *     same). Proformas and non-tax documents are skipped; corrective invoices
+ *     are counted as credit notes — UOL reports their amounts as positive numbers.
  *
  * Returns are due on the 25th of the month after the period ends.
  */
@@ -68,22 +71,30 @@ export async function vatOverview(
   kind: VatKind,
   count: number,
   today: string,
-): Promise<{ periods: VatFigures[]; truncated: boolean }> {
+): Promise<{ periods: VatFigures[]; truncated: boolean; closing_documents_available: boolean }> {
   const windows = vatWindows(today, kind, count);
   const from = windows[windows.length - 1]!.start;
-  const [docs, sales, purchases] = await Promise.all([
-    fetchPages((page, perPage) => client.internalDocuments({ page, per_page: perPage }), MAX_VAT_PAGES),
+  const purchasePages = (filter: Record<string, string>) =>
+    fetchPages((page, perPage) => client.purchaseInvoices({ ...filter, page, per_page: perPage }), MAX_VAT_PAGES);
+  const [docs, sales, purchasesByDuzp, purchasesByReceipt] = await Promise.all([
+    // Some tenants answer 404 on internal documents; without closing documents every period is an estimate.
+    fetchPages((page, perPage) => client.internalDocuments({ page, per_page: perPage }), MAX_VAT_PAGES).catch(
+      (error: unknown) => {
+        if (error instanceof UolApiError && error.status === 404) return undefined;
+        throw error;
+      },
+    ),
     fetchPages(
       (page, perPage) => client.salesInvoices({ tax_payment_date_from: from, page, per_page: perPage }),
       MAX_VAT_PAGES,
     ),
-    fetchPages(
-      (page, perPage) => client.purchaseInvoices({ tax_payment_date_from: from, page, per_page: perPage }),
-      MAX_VAT_PAGES,
-    ),
+    // An invoice whose DUZP falls before the window but that arrived inside it still counts there.
+    purchasePages({ tax_payment_date_from: from }),
+    purchasePages({ received_date_from: from }),
   ]);
+  const purchases = uniqueInvoices([...purchasesByDuzp.rows, ...purchasesByReceipt.rows]);
 
-  const closing = docs.rows.filter((d) => d.status === 'confirmed' && (d.note ?? '').startsWith('DPH '));
+  const closing = (docs?.rows ?? []).filter((d) => d.status === 'confirmed' && (d.note ?? '').startsWith('DPH '));
   const periods = windows.map((w) => {
     const doc = closing.find((d) => inWindow(str(d.date), w));
     const due = ymd(Number(w.endExclusive.slice(0, 4)), Number(w.endExclusive.slice(5, 7)), 25);
@@ -107,8 +118,8 @@ export async function vatOverview(
         invoices_counted: null,
       };
     }
-    const salesIn = sales.rows.filter((i) => countsForVat(i, w));
-    const purchasesIn = purchases.rows.filter((i) => countsForVat(i, w));
+    const salesIn = sales.rows.filter((i) => countsForVat(i, w, duzp(i)));
+    const purchasesIn = purchases.filter((i) => countsForVat(i, w, deductionDate(i)));
     const output = money(salesIn.reduce((sum, i) => sum + invoiceVat(i), 0));
     const input = money(purchasesIn.reduce((sum, i) => sum + invoiceVat(i), 0));
     return {
@@ -123,7 +134,12 @@ export async function vatOverview(
     };
   });
 
-  return { periods, truncated: docs.truncated || sales.truncated || purchases.truncated };
+  return {
+    periods,
+    truncated:
+      Boolean(docs?.truncated) || sales.truncated || purchasesByDuzp.truncated || purchasesByReceipt.truncated,
+    closing_documents_available: docs !== undefined,
+  };
 }
 
 function closingTotals(doc: RawInternalDocument): { output: number; input: number } {
@@ -138,10 +154,31 @@ function closingTotals(doc: RawInternalDocument): { output: number; input: numbe
   return { output: money(output), input: money(input) };
 }
 
-function countsForVat(invoice: RawSalesInvoice | RawPurchaseInvoice, w: VatWindow): boolean {
+function countsForVat(invoice: RawSalesInvoice | RawPurchaseInvoice, w: VatWindow, date: string | null): boolean {
   if (invoice.status !== 'confirmed') return false;
   if (invoice.type === 'proforma' || invoice.vat_document === false) return false;
-  return inWindow(str(invoice.tax_payment_date) ?? str(invoice.issue_date), w);
+  return inWindow(date, w);
+}
+
+const duzp = (invoice: RawSalesInvoice | RawPurchaseInvoice) =>
+  str(invoice.tax_payment_date)?.slice(0, 10) ?? str(invoice.issue_date)?.slice(0, 10) ?? null;
+
+/** Input VAT is claimed once the supply has happened and the document has arrived, whichever is later. */
+export function deductionDate(invoice: RawPurchaseInvoice): string | null {
+  const supply = duzp(invoice);
+  const received = str(invoice.date_of_receipt)?.slice(0, 10) ?? null;
+  if (!supply || !received) return supply ?? received;
+  return received > supply ? received : supply;
+}
+
+function uniqueInvoices(rows: RawPurchaseInvoice[]): RawPurchaseInvoice[] {
+  const seen = new Set<string>();
+  return rows.filter((row) => {
+    const key = String(row.invoice_id);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 /** VAT of one invoice in the home currency, negative for corrective invoices. */

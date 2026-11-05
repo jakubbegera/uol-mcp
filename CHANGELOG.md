@@ -20,6 +20,22 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - `get_sales_invoice` returns the invoice's own bank account and contract, and invoice lines say
   whether the price was entered with VAT (`price_includes_vat`).
 
+### Changed
+
+- `get_financial_overview` and `get_business_snapshot` mark months with no postings as `booked: false`
+  and report `booked_through`, so a month the accountant hasn't booked yet isn't read as zero.
+- Revenue and expense account totals carry the account's name from the Czech chart of accounts.
+- `get_business_snapshot` adds `vat_due_next`, the VAT period whose return is due next.
+
+### Fixed
+
+- `get_vat_overview` and the snapshot's VAT section no longer fail on tenants that answer 404 for
+  internal documents: every period is estimated from invoices, and the method says so.
+- Errors without a message from UOL name the API path that failed instead of a bare status.
+- The VAT estimate deducts a received invoice's VAT in the period it arrived when that is later than its DUZP,
+  as UOL's own VAT report does; before, an invoice dated at month end and received the next month landed in
+  the wrong period.
+
 ## [0.5.0] — 2026-11-05
 
 ### Added

@@ -77,6 +77,8 @@ code, in a tool description, or in the server instructions.
 | 30 | The pairing POST answers with the document but without the new pairing. | `pair_uploaded_document` reads the document back. |
 | 31 | Missing rights answer 403 with code `0014` (the DEMO user can't repair invoices); a duplicate upload answers 400. | Both are explained in the tool error. |
 | 32 | The DEMO tenant's credentials are public, so its rate limit is shared with everyone using them; 429 can appear even below our own budget. | Expected on DEMO only. |
+| 33 | Some real tenants answer 404 on `/v1/internal_documents` (seen on a sole trader's tenant whose ledger and invoices work), and there is no chart-of-accounts endpoint. A 404 without a body carries no message. | VAT falls back to invoice estimates for every period and says so; account names come from a fixed table of common synthetic accounts; bare HTTP errors name the API path. |
+| 34 | UOL's VAT report puts a received invoice's input VAT in the period of the later of its DUZP and `date_of_receipt` (an invoice dated 30 June and received 2 July is deducted in July); the API has no separate deduction-date field. Closing documents carry whole crowns, the web report shows hellers. | The invoice estimate buckets purchases by that later date and queries purchases both by DUZP and by receipt date, so late arrivals from before the window are not lost. |
 
 Error codes from the spec: `0001` missing auth, `0002` bad credentials or missing permission,
 `0003` unknown tenant, `0004` not found, `0005` cannot delete (integrity), `0010` internal error.
@@ -215,7 +217,7 @@ server.json             MCP Registry entry; the release workflow adds the MCPB p
 | core | `get_uploaded_document` | `…/{id}/pairings`, `…/{id}/tags`, `HEAD file` | Pairings, tags, original file name. |
 | core | `download_uploaded_document` | file (3 shapes) | Saves the file; explains a cleaned-up file. |
 | core | `api_get(path, query)` | any `GET /v1/…` | Escape hatch for anything not covered, including future endpoints; output trimmed. |
-| insights | `get_financial_overview(months)` | `/accounting_records` (4 prefix-filtered queries) | Revenue / expenses / profit per month from the GL, change vs the previous month, largest accounts. |
+| insights | `get_financial_overview(months)` | `/accounting_records` (4 prefix-filtered queries) | Revenue / expenses / profit per month from the GL, change vs the previous month, largest accounts with their names; `booked` per month and `booked_through`, so a month the accountant hasn't booked isn't read as zero. |
 | insights | `get_vat_overview(periods)` | invoices + `/internal_documents` | Per filing period: output, input, to pay, due date, `preliminary` flag. |
 | insights | `get_bank_balances` | `/bank_balances` | Snapshot semantics; newest per account, per currency, optional history. |
 | insights | `get_business_snapshot` | all of the above + receivables, documents | This month, VAT, receivables, documents to process, bank balance with `as_of`; failing sections are reported, not fatal. |

@@ -16,12 +16,19 @@ const monthFigures = z.object({
   revenue: z.number(),
   expenses: z.number(),
   profit: z.number(),
+  booked: z.boolean().describe('False = no revenue or expense posting in this month yet (not booked), not a zero month'),
 });
 
 const accountTotal = z.object({
   account: z.string().describe('Synthetic account of the Czech chart of accounts (směrná účtová osnova), e.g. 602, 518, 521'),
+  name: z.string().nullable().describe('Its name in the Czech chart of accounts, e.g. "Ostatní služby"'),
   amount: z.number(),
 });
+
+const BOOKED_THROUGH = 'Date of the latest revenue or expense posting: the ledger is booked up to here; later months are not booked yet';
+
+const NO_CLOSING_DOCUMENTS =
+  'This company exposes no internal documents through the API, so there are no closing documents and every period is an estimate.';
 
 const vatFigures = z.object({
   period: z.string().describe('YYYY-MM for monthly payers, YYYY-Qn for quarterly'),
@@ -57,8 +64,9 @@ const BANK_NOTE =
   'UOL stores monthly opening-balance snapshots (1st of the month), not live balances; always quote the as_of date.';
 
 const VAT_NOTE =
-  'Closed periods use UOL\'s "DPH" closing document (exact). Open periods are estimated from issued invoices by DUZP: ' +
-  'proformas skipped, corrective invoices counted as credit notes, internal documents and reverse charge not included.';
+  'Closed periods use UOL\'s "DPH" closing document (exact). Open periods are estimated from issued invoices — ' +
+  'output VAT by DUZP, input VAT by the later of DUZP and the receipt date: proformas skipped, ' +
+  'corrective invoices counted as credit notes, internal documents and reverse charge not included.';
 
 function vatCount(kind: VatKind, requested: number | undefined): number {
   return requested ?? (kind === 'monthly' ? 4 : 2);
@@ -96,7 +104,8 @@ export function registerInsightTools(server: McpServer, ctx: ToolContext): void 
       description:
         'Revenue (výnosy, class 6), expenses (náklady, class 5) and profit per month from the general ledger — the same basis as the UOL web dashboard, ' +
         'so payroll, rent and other internal documents count, not just invoices. Amounts are net of VAT, in the home currency. ' +
-        'The current month is still running. Also returns the largest revenue and expense accounts for the whole window.',
+        'The current month is still running, and months the accountant has not booked yet have booked=false — say so ' +
+        'instead of reporting zero. Also returns the largest revenue and expense accounts (with names) for the whole window.',
       input: z.object({
         months: z.number().int().min(1).max(24).default(6).describe('Months ending with the current one'),
       }),
@@ -115,6 +124,7 @@ export function registerInsightTools(server: McpServer, ctx: ToolContext): void 
           .nullable(),
         revenue_by_account: z.array(accountTotal),
         expenses_by_account: z.array(accountTotal),
+        booked_through: z.string().nullable().describe(BOOKED_THROUGH),
         truncated: z.boolean().describe('True when the ledger had more postings than one call reads; use fewer months'),
       }),
     },
@@ -130,6 +140,7 @@ export function registerInsightTools(server: McpServer, ctx: ToolContext): void 
           current_vs_previous: comparison(summary),
           revenue_by_account: summary.revenue_by_account,
           expenses_by_account: summary.expenses_by_account,
+          booked_through: summary.booked_through,
           truncated: summary.truncated,
         },
       };
@@ -169,8 +180,9 @@ export function registerInsightTools(server: McpServer, ctx: ToolContext): void 
       if (period === 'not_vat_payer') {
         return { data: { as_of: today, vat_period: period, periods: [], method: VAT_NOTE, truncated: false } };
       }
-      const result = await vatOverview(client, period, vatCount(period, periods), today);
-      return { data: { as_of: today, vat_period: period, method: VAT_NOTE, ...result } };
+      const { closing_documents_available, ...result } = await vatOverview(client, period, vatCount(period, periods), today);
+      const method = closing_documents_available ? VAT_NOTE : `${VAT_NOTE} ${NO_CLOSING_DOCUMENTS}`;
+      return { data: { as_of: today, vat_period: period, method, ...result } };
     },
   );
 
@@ -215,7 +227,8 @@ export function registerInsightTools(server: McpServer, ctx: ToolContext): void 
     {
       title: 'Business snapshot',
       description:
-        '"How is the company doing?" in one call: this month vs last month (revenue, expenses, profit), the current VAT period, ' +
+        '"How is the company doing?" in one call: this month vs last month (revenue, expenses, profit, whether booked yet), ' +
+        'the VAT period due next and the running one, ' +
         'unpaid and overdue receivables, uploaded documents waiting for the accountant, and bank balances. ' +
         'Sections that fail (e.g. missing permission) are null and listed in errors; sections read only partly are listed in ' +
         'incomplete. Use the dedicated tools for detail.',
@@ -225,7 +238,9 @@ export function registerInsightTools(server: McpServer, ctx: ToolContext): void 
         company: z.object({ name: z.string().nullable(), vat_period: z.enum(['monthly', 'quarterly', 'not_vat_payer']) }).nullable(),
         this_month: monthFigures.nullable(),
         previous_month: monthFigures.nullable(),
-        vat_current_period: vatFigures.nullable(),
+        booked_through: z.string().nullable().describe(BOOKED_THROUGH),
+        vat_due_next: vatFigures.nullable().describe('The period whose return and payment are due next — what will be paid'),
+        vat_current_period: vatFigures.nullable().describe('The running period, still open'),
         receivables: z
           .object({
             totals: z.array(receivableTotalsSchema),
@@ -290,9 +305,13 @@ export function registerInsightTools(server: McpServer, ctx: ToolContext): void 
       const vat =
         companyInfo && companyInfo.period !== 'not_vat_payer'
           ? await attempt('vat', async () => {
-              const overview = await vatOverview(client, companyInfo.period as VatKind, 1, today);
+              // Two periods: the running one and the previous one, whose return is usually the one due next.
+              const overview = await vatOverview(client, companyInfo.period as VatKind, 2, today);
               flag('vat', overview.truncated);
-              return overview.periods[0] ?? null;
+              const dueNext = overview.periods
+                .filter((p) => p.days_left >= 0)
+                .sort((a, b) => a.days_left - b.days_left)[0];
+              return { current: overview.periods[0] ?? null, dueNext: dueNext ?? null };
             })
           : null;
 
@@ -302,7 +321,9 @@ export function registerInsightTools(server: McpServer, ctx: ToolContext): void 
           company: companyInfo ? { name: str(companyInfo.company?.name), vat_period: companyInfo.period } : null,
           this_month: ledger?.months[1] ?? null,
           previous_month: ledger?.months[0] ?? null,
-          vat_current_period: vat,
+          booked_through: ledger?.booked_through ?? null,
+          vat_due_next: vat?.dueNext ?? null,
+          vat_current_period: vat?.current ?? null,
           receivables,
           documents_to_process: documents,
           bank: bank && bank.length > 0 ? bank : null,

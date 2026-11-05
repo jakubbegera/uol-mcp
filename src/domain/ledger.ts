@@ -1,5 +1,6 @@
 import type { RawAccountingRecord, UolClient } from '../uol/client.js';
 import { amount, money, refId } from '../uol/normalize.js';
+import { accountName } from './accounts.js';
 import { fetchPages } from './paging.js';
 
 /**
@@ -22,11 +23,15 @@ export interface MonthFigures {
   revenue: number;
   expenses: number;
   profit: number;
+  /** False when the month has no class 5/6 posting yet — the accountant hasn't booked it, not a zero month. */
+  booked: boolean;
 }
 
 export interface AccountTotal {
   /** Synthetic (3-digit) account of the Czech chart of accounts, e.g. 602, 518. */
   account: string;
+  /** Its name in the Czech chart of accounts, when it is a common one. */
+  name: string | null;
   amount: number;
 }
 
@@ -34,6 +39,8 @@ export interface LedgerSummary {
   months: MonthFigures[];
   revenue_by_account: AccountTotal[];
   expenses_by_account: AccountTotal[];
+  /** Date of the latest revenue or expense posting in the window: the ledger is booked up to here. */
+  booked_through: string | null;
   truncated: boolean;
 }
 
@@ -67,7 +74,8 @@ export async function ledgerSummary(client: UolClient, months: string[], today: 
     ),
   );
 
-  const byMonth = new Map(months.map((m) => [m, { revenue: 0, expenses: 0 }]));
+  const byMonth = new Map(months.map((m) => [m, { revenue: 0, expenses: 0, postings: 0 }]));
+  let bookedThrough: string | null = null;
   const revenueByAccount = new Map<string, number>();
   const expensesByAccount = new Map<string, number>();
 
@@ -77,6 +85,8 @@ export async function ledgerSummary(client: UolClient, months: string[], today: 
       if (!posting) continue;
       const bucket = byMonth.get(posting.month);
       if (!bucket) continue;
+      bucket.postings += 1;
+      if (!bookedThrough || posting.date > bookedThrough) bookedThrough = posting.date;
       const accounts = cls === '6' ? revenueByAccount : expensesByAccount;
       accounts.set(posting.account, (accounts.get(posting.account) ?? 0) + posting.amount);
       if (cls === '6') bucket.revenue += posting.amount;
@@ -86,11 +96,18 @@ export async function ledgerSummary(client: UolClient, months: string[], today: 
 
   return {
     months: months.map((month) => {
-      const { revenue, expenses } = byMonth.get(month)!;
-      return { month, revenue: money(revenue), expenses: money(expenses), profit: money(revenue - expenses) };
+      const { revenue, expenses, postings } = byMonth.get(month)!;
+      return {
+        month,
+        revenue: money(revenue),
+        expenses: money(expenses),
+        profit: money(revenue - expenses),
+        booked: postings > 0,
+      };
     }),
     revenue_by_account: topAccounts(revenueByAccount),
     expenses_by_account: topAccounts(expensesByAccount),
+    booked_through: bookedThrough,
     truncated: results.some((r) => r.truncated),
   };
 }
@@ -110,6 +127,7 @@ function classify(row: RawAccountingRecord, side: Side, cls: '5' | '6') {
   const value = amount(row.accounting_amount) ?? amount(row.amount) ?? 0;
   const growsOn: Side = cls === '6' ? 'credit' : 'debit';
   return {
+    date: (row.date ?? '').slice(0, 10),
     month: (row.date ?? '').slice(0, 7),
     account: own.slice(0, 3),
     amount: side === growsOn ? value : -value,
@@ -118,7 +136,7 @@ function classify(row: RawAccountingRecord, side: Side, cls: '5' | '6') {
 
 function topAccounts(totals: Map<string, number>, limit = 10): AccountTotal[] {
   return [...totals.entries()]
-    .map(([account, value]) => ({ account, amount: money(value) }))
+    .map(([account, value]) => ({ account, name: accountName(account), amount: money(value) }))
     .filter((t) => t.amount !== 0)
     .sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount))
     .slice(0, limit);
