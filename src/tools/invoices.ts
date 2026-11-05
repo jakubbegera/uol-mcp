@@ -93,6 +93,7 @@ function items(raw: RawInvoiceItem[] | undefined) {
     quantity: amount(item.quantity),
     unit_price: amount(item.unit_price),
     unit_price_with_vat: amount(item.unit_price_vat_inclusive),
+    price_includes_vat: item.vat_calculation_method ? item.vat_calculation_method === 'from_above' : null,
     vat_rate: amount(item.vat_rate),
     discount_percent: amount(item.percent_discount),
     product_id: refId(item.product, 'product_id'),
@@ -217,12 +218,15 @@ export function registerInvoiceTools(server: McpServer, ctx: ToolContext): void 
     {
       title: 'Get issued invoice',
       description:
-        'One issued (sales) invoice with line items, VAT, payment symbols and payments received. ' +
-        'Use export_sales_invoice for the PDF or ISDOC.',
+        'One issued (sales) invoice with line items, VAT, payment symbols, own bank account and payments received. ' +
+        'Use export_sales_invoice for the PDF or ISDOC. Earlier invoices to the same buyer show how they are usually ' +
+        'issued (DUZP, due days, products, line texts, bank account) — a template for a new one.',
       input: z.object({ invoice_id: z.string().describe('invoice_id from search_sales_invoices') }),
       output: salesRow.extend({
         ...commonDetail,
         text: z.string().nullable().describe('Introductory text printed on the invoice'),
+        bank_account_id: z.string().nullable().describe('Own bank account the buyer pays to (list_codebook my_bank_accounts)'),
+        contract_id: z.string().nullable().describe('Contract (zakázka), if any'),
         linked_invoice_id: z.string().nullable().describe('E.g. the original invoice of a corrective invoice'),
         payments: z.array(z.object({ date: z.string().nullable(), amount: z.number().nullable(), currency: z.string().nullable() })),
       }),
@@ -247,6 +251,8 @@ export function registerInvoiceTools(server: McpServer, ctx: ToolContext): void 
           ...salesRowOf(raw, names, pay),
           ...detailOf(raw),
           text: str(raw.text),
+          bank_account_id: refId(raw.bank_account, 'bank_account_id'),
+          contract_id: refId(raw.contract, 'contract_id'),
           linked_invoice_id: hrefId(raw.linked_doc ?? undefined) ?? str(raw.linked_doc_number),
           payments: (receivable?.payments ?? []).map((p) => ({
             date: str(p.timestamp)?.slice(0, 10) ?? null,

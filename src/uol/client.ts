@@ -22,6 +22,7 @@ export interface RawInvoiceItem {
   unit_price_vat_inclusive?: string | number | null;
   vat_rate?: number | string | null;
   percent_discount?: number | string | null;
+  vat_calculation_method?: string | null;
   product?: Ref<'product_id'>;
 }
 
@@ -55,6 +56,8 @@ interface RawInvoiceCommon {
 
 export interface RawSalesInvoice extends RawInvoiceCommon {
   buyer?: Href;
+  bank_account?: Ref<'bank_account_id'>;
+  contract?: Ref<'contract_id'>;
   text?: string | null;
   cancellation_date?: string | null;
   linked_doc?: Href | null;

@@ -10,7 +10,15 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - `issue_invoice` prompt (with `UOL_ACCESS=write` or `full`): builds a sales invoice from a free-text
   Czech description. It finds the buyer and an existing product for every line, never invents either,
   shows a dry run with totals and dates, and creates a draft only after you confirm; issuing needs an
-  explicit request. With several accounts it takes the account to use (`ucet`).
+  explicit request. With several accounts it takes the account to use (`ucet`). It first learns how
+  that customer is usually invoiced from their earlier invoices (DUZP rule, due days, products, line
+  texts, bank account, symbols, several invoices per period, recurring lines), checks for an invoice
+  that already exists for the period and for overdue debts, and warns when the issue date is more than
+  15 days after the DUZP.
+- `uol-ucetnictvi` skill in `skills/`: the same invoicing flow, and how to read revenue, profit, VAT,
+  receivables and bank balances correctly, with the Czech tax basics the model tends to get wrong.
+- `get_sales_invoice` returns the invoice's own bank account and contract, and invoice lines say
+  whether the price was entered with VAT (`price_includes_vat`).
 
 ## [0.5.0] — 2026-11-05
 

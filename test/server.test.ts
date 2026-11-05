@@ -145,6 +145,7 @@ describe('issue_invoice prompt', () => {
     expect(text).toContain('dry_run: true');
     expect(text).toContain('koncept (issue: false)');
     expect(text).toContain('product_id nikdy nevymýšlej');
+    expect(text).toContain('search_sales_invoices s buyer_id');
     expect(text).not.toContain('account:');
   });
 
@@ -260,9 +261,10 @@ describe('core tools against DEMO fixtures', () => {
     const { data } = await call('get_sales_invoice', { invoice_id: '2026000044' });
 
     // assert
-    expect(data.items[0]).toMatchObject({ quantity: 1, unit_price: 121, vat_rate: 0, product_id: 'zaloha_fo' });
+    expect(data.items[0]).toMatchObject({ quantity: 1, unit_price: 121, price_includes_vat: true, vat_rate: 0, product_id: 'zaloha_fo' });
     expect(data.payment).toEqual({ state: 'unpaid', outstanding: 121 });
     expect(data.buyer.id).toBe('gatom_technicky_test_1');
+    expect(data).toMatchObject({ bank_account_id: 'cs_czk', contract_id: null });
   });
 
   it('get_sales_invoice turns a 404 into a tool error', async () => {

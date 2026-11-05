@@ -38,6 +38,11 @@ Připravené postupy (v klientech jako příkazy s lomítkem): `monthly_review` 
 ukáže náhled a po potvrzení ji založí jako koncept). Seznam všech tools a volitelných sad je v
 [anglickém README](README.md#what-it-can-do).
 
+Skill [`uol-ucetnictvi`](skills/uol-ucetnictvi/SKILL.md) jde dál: fakturu vystaví tak, jak danému odběrateli
+fakturujete vždycky (DUZP, splatnost, produkty, texty řádků a bankovní účet odvodí z předchozích faktur), a
+výnosy, zisk, DPH a pohledávky čte jako účetní (nezaúčtované měsíce, odhady, termíny). Instalace je
+popsaná v [anglickém README](README.md#what-it-can-do).
+
 Příklady otázek:
 
 - „Jak si letos stojíme?“

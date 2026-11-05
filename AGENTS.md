@@ -44,6 +44,8 @@ and 26, `npm audit`, a Trivy scan of the image, CodeQL and dependency review.
   `auditedWrite`, `CONFIRM_FIRST` and the `WRITE` / `DESTRUCTIVE` annotations; `schemas.ts` the shared
   zod pieces (`pageArg`, `limitArg`, `pageInfo`, `isoDate`).
 - `src/instructions.ts`, `src/prompts.ts`, `src/resources.ts` — what the model sees besides tools.
+- `skills/uol-ucetnictvi/` — a skill users install in their client: invoicing from history and reading the
+  financials. Keep it in step with tool names and fields; it is public, so no real data in examples.
 - `test/` — `*.test.ts`; `test/support/fake-uol.ts` serves the recorded fixtures through a fake
   `fetch` (`connect(config, fetch)`, `demoConfig()`, `fakeUolFetch()` with the `requests` it saw).
   `test/fixtures/demo/` is recorded from the public DEMO tenant and pseudonymised;
