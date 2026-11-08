@@ -38,7 +38,8 @@
         "UOL_TOKEN": "${user_config.token}",
         "UOL_DOWNLOAD_DIR": "${user_config.download_dir}",
         "UOL_ACCESS": "${user_config.access}",
-        "UOL_TOOLSETS": "${user_config.toolsets}"
+        "UOL_TOOLSETS": "${user_config.toolsets}",
+        "UOL_PROMPT_LANGUAGE": "${user_config.prompt_language}"
       }
     }
   },
@@ -82,6 +83,13 @@
       "description": "core,insights (default). Add ledger, banking or warehouse, or use all.",
       "required": false,
       "default": "core,insights"
+    },
+    "prompt_language": {
+      "type": "string",
+      "title": "Prompt language",
+      "description": "cs (default) or en — the language of the ready-made prompts (slash commands) and of the answers they ask for.",
+      "required": false,
+      "default": "cs"
     }
   },
   "tools": [

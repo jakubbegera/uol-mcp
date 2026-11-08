@@ -5,6 +5,12 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- English prompts: with `UOL_PROMPT_LANGUAGE=en` (the Claude Desktop extension's "Prompt language") the
+  slash commands are written in English and ask for English answers; `issue_invoice` then takes `request` and
+  `account`. Czech stays the default, unchanged.
+
 ## [0.6.2] — 2026-11-08
 
 ### Added

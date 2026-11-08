@@ -106,6 +106,22 @@ describe('resources and prompts', () => {
     expect((followup.messages[0]?.content as { text: string }).text).toContain('víc než 14 dní');
     expect((followup.messages[0]?.content as { text: string }).text).toContain('Nic neodesílej');
   });
+
+  it('switches the prompts to English with UOL_PROMPT_LANGUAGE=en', async () => {
+    // arrange
+    client = await connect(demoConfig(tmpdir(), { promptLanguage: 'en' }));
+
+    // act
+    const { prompts } = await client.listPrompts();
+    const review = await client.getPrompt({ name: 'monthly_review', arguments: { month: '2026-10' } });
+    const followup = await client.getPrompt({ name: 'overdue_followup', arguments: {} });
+
+    // assert
+    expect(prompts.find((p) => p.name === 'monthly_review')?.title).toBe('Monthly review');
+    expect((review.messages[0]?.content as { text: string }).text).toContain('the month 2026-10');
+    expect((review.messages[0]?.content as { text: string }).text).toContain('Answer in English');
+    expect((followup.messages[0]?.content as { text: string }).text).toContain('more than 14 days');
+  });
 });
 
 describe('issue_invoice prompt', () => {
@@ -173,6 +189,36 @@ describe('issue_invoice prompt', () => {
     expect(textOf(chosen)).toContain('account: "jb"');
     expect(textOf(byDefault)).toContain('výchozím účtu');
     expect(textOf(byDefault)).not.toContain('account: "');
+  });
+
+  it('takes English argument names and passes the account on in English', async () => {
+    // arrange
+    const config = loadConfig({
+      UOL_ACCESS: 'write',
+      UOL_PROMPT_LANGUAGE: 'en',
+      UOL_ACCOUNTS: 'hc,jb',
+      UOL_ACCOUNT_HC_TENANT: 'demo',
+      UOL_ACCOUNT_JB_TENANT: 'demo',
+      UOL_DOWNLOAD_DIR: tmpdir(),
+    });
+    client = await connect(config);
+    const request = 'Invoice ACME s.r.o. (IČO 12345678): 10 hours of consulting at 1500 CZK without VAT';
+
+    // act
+    const { prompts } = await client.listPrompts();
+    const prompt = await client.getPrompt({ name: 'issue_invoice', arguments: { request, account: 'jb' } });
+
+    // assert
+    expect(prompts.find((p) => p.name === 'issue_invoice')?.arguments).toEqual([
+      expect.objectContaining({ name: 'request', required: true }),
+      expect.objectContaining({ name: 'account', required: false }),
+    ]);
+    const text = textOf(prompt);
+    expect(text).toContain(request);
+    expect(text).toContain('account: "jb"');
+    expect(text).toContain('dry_run: true');
+    expect(text).toContain('a draft (issue: false)');
+    expect(text).toContain('Never invent a product_id');
   });
 });
 

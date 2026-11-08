@@ -113,6 +113,11 @@ export function createServer(ctx: ToolContext): McpServer {
   }
   if (access === 'full') registerDestructiveTools(server, ctx);
   registerResources(server, ctx);
-  registerPrompts(server, { toolsets, writes, accounts: (ctx.config.accounts ?? []).map((a) => a.name) });
+  registerPrompts(server, {
+    toolsets,
+    writes,
+    accounts: (ctx.config.accounts ?? []).map((a) => a.name),
+    language: ctx.config.promptLanguage ?? 'cs',
+  });
   return server;
 }

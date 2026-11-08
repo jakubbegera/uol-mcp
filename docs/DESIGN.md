@@ -128,6 +128,7 @@ Desktop — the two paths that reach non-developers.
 | `UOL_TIMEOUT_MS` | `30000` | Per-request timeout | 0.1 |
 | `UOL_DEBUG` | off | Request log on stderr (path, status, duration; never credentials) | 0.1 |
 | `UOL_ACCESS` | `read` | `read` · `write` (adds upload / create / update) · `full` (adds deletes, repairs and `api_request`) | 0.3 |
+| `UOL_PROMPT_LANGUAGE` | `cs` | Language of the prompts and of the answers they ask for: `cs` or `en`. The prompt names stay the same; `issue_invoice` takes `zadani` / `ucet` in Czech and `request` / `account` in English. Unknown values fall back to `cs` with a warning. | 0.7 |
 | `UOL_TOOLSETS` | `core,insights` | Tool groups to register (§4): `core`, `insights`, `ledger`, `banking`, `warehouse`, or `all`. Unknown names are reported on stderr. | 0.2 |
 | `UOL_UPLOAD_DIRS` | `~/Downloads:~/Desktop:~/Documents` (stdio); none over HTTP | Directories `upload_document` may read from; over HTTP, `file_path` is off unless this is set | 0.3 |
 | `UOL_AUDIT_LOG` | — | JSONL file recording every write (tool, endpoint, payload hash, result id) | 0.3 |
@@ -150,7 +151,7 @@ src/
   server.ts             builds the McpServer and registers tools per toolset and access level
   instructions.ts       server instructions: the domain hints from §2 for the model
   resources.ts          uol://guide, uol://company
-  prompts.ts            Czech workflow prompts
+  prompts.ts            workflow prompts in Czech (default) and English
   config.ts             env → validated config, tenant resolution
   uol/
     http.ts             fetch wrapper: Basic auth, single Accept, timeout, correlation id,
@@ -273,7 +274,8 @@ and every call checks the level of the account it targets (`UOL_ACCOUNT_<NAME>_A
 Planned: `uol://codebooks/{kind}`, templates `uol://sales-invoices/{id}`,
 `uol://uploaded-documents/{id}/file`.
 
-**Prompts** (Czech, because the text is sent as the user's message; shown as slash commands; a prompt
+**Prompts** (Czech by default, English with `UOL_PROMPT_LANGUAGE=en`; the text is sent as the user's message, so it
+sets the language of the answers; shown as slash commands; a prompt
 is registered only when the toolset it relies on is enabled, and a writing prompt only when the write
 tools are registered)
 

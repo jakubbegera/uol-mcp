@@ -24,6 +24,10 @@ export const DEFAULT_TOOLSETS: readonly Toolset[] = ['core', 'insights'];
 
 /** `read` — no writes; `write` — create / update / upload; `full` — adds destructive tools. */
 export const ACCESS_LEVELS = ['read', 'write', 'full'] as const;
+
+/** Languages the prompts (slash commands) are written in; Czech is the default. */
+export const PROMPT_LANGUAGES = ['cs', 'en'] as const;
+export type PromptLanguage = (typeof PROMPT_LANGUAGES)[number];
 export type Access = (typeof ACCESS_LEVELS)[number];
 
 /** Whether [granted] covers [needed]: read < write < full. */
@@ -76,6 +80,8 @@ export interface AppConfig {
   toolsets?: ReadonlySet<Toolset>;
   /** Which write tools exist at all; `read` when unset. */
   access?: Access;
+  /** Language of the prompts and of the answers they ask for; `cs` when unset. */
+  promptLanguage?: PromptLanguage;
   /** Directories upload_document may read files from. */
   uploadDirs?: string[];
   /** True when UOL_UPLOAD_DIRS was set; the HTTP server allows file_path uploads only then. */
@@ -176,6 +182,11 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   const rawAccess = value(env.UOL_ACCESS)?.toLowerCase() ?? 'read';
   const access = (ACCESS_LEVELS as readonly string[]).includes(rawAccess) ? (rawAccess as Access) : 'read';
   if (access !== rawAccess) warnings.push(`unknown UOL_ACCESS "${rawAccess}", using read (known: ${ACCESS_LEVELS.join(', ')})`);
+  const rawLanguage = value(env.UOL_PROMPT_LANGUAGE)?.toLowerCase() ?? 'cs';
+  const promptLanguage = (PROMPT_LANGUAGES as readonly string[]).includes(rawLanguage) ? (rawLanguage as PromptLanguage) : 'cs';
+  if (promptLanguage !== rawLanguage) {
+    warnings.push(`unknown UOL_PROMPT_LANGUAGE "${rawLanguage}", using cs (known: ${PROMPT_LANGUAGES.join(', ')})`);
+  }
   const uploadDirs = value(env.UOL_UPLOAD_DIRS)
     ?.split(delimiter)
     .map((d) => d.trim())
@@ -184,6 +195,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   const config: AppConfig = {
     toolsets,
     access,
+    promptLanguage,
     uploadDirs: uploadDirs && uploadDirs.length > 0 ? uploadDirs : defaultUploadDirs(),
     explicitUploadDirs: Boolean(uploadDirs && uploadDirs.length > 0),
     auditLog: value(env.UOL_AUDIT_LOG),
