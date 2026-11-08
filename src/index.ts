@@ -26,6 +26,7 @@ Environment:
   UOL_UPLOAD_DIRS    folders upload_document may read from
   UOL_AUDIT_LOG      JSONL file recording every write
   UOL_TOOLSETS       core, insights (default), ledger, banking, warehouse or all
+  UOL_PROMPT_LANGUAGE  cs (default) or en — language of the prompts (slash commands)
   UOL_ACCOUNTS       several tenants: a,b plus UOL_ACCOUNT_A_TENANT / _EMAIL / _TOKEN / _LABEL / _ACCESS
   UOL_PROFILES_FILE  several tenants from a JSON file instead
   UOL_DEBUG=1        log requests to stderr

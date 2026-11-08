@@ -75,6 +75,7 @@ Want to try it first? `UOL_TENANT=demo` uses UOL's public DEMO company, no token
 | `UOL_DOWNLOAD_DIR` | Where exported and downloaded files go (default `~/Downloads/uol-mcp`) |
 | `UOL_TOOLSETS` | Comma-separated: `core`, `insights` (these two are the default), `ledger`, `banking`, `warehouse`, or `all` |
 | `UOL_ACCESS` | `read` (default), `write` or `full` — see [Writing](#writing-opt-in) |
+| `UOL_PROMPT_LANGUAGE` | Language of the prompts (slash commands) and of the answers they ask for: `cs` (default) or `en` |
 | `UOL_ACCOUNTS`, `UOL_DEFAULT_ACCOUNT` | Several companies in one server — see [Several companies](#several-companies); `UOL_ACCOUNT_<NAME>_ACCESS` sets one account's level |
 | `UOL_PROFILES_FILE` | The same from a JSON file |
 | `UOL_UPLOAD_DIRS` | Folders `upload_document` may read from (default `~/Downloads`, `~/Desktop`, `~/Documents`; `:`-separated, `;` on Windows). The HTTP server has no default: without this variable it accepts only `content_base64` |

@@ -100,6 +100,20 @@ describe('loadConfig', () => {
     expect(config.warnings).toHaveLength(warnings);
   });
 
+  it.each([
+    [undefined, 'cs', 0],
+    ['en', 'en', 0],
+    ['EN', 'en', 0],
+    ['de', 'cs', 1],
+  ])('parses UOL_PROMPT_LANGUAGE=%j as %s', (raw, language, warnings) => {
+    // act
+    const config = loadConfig({ UOL_PROMPT_LANGUAGE: raw });
+
+    // assert
+    expect(config.promptLanguage).toBe(language);
+    expect(config.warnings).toHaveLength(warnings);
+  });
+
   it('splits UOL_UPLOAD_DIRS on the platform delimiter and defaults to the usual user folders', () => {
     // act
     const custom = loadConfig({ UOL_UPLOAD_DIRS: `/a${delimiter}/b${delimiter}` });

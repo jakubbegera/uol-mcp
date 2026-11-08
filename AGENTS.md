@@ -53,8 +53,9 @@ and 26, `npm audit`, a Trivy scan of the image, CodeQL and dependency review.
 
 ## Conventions
 
-- English for code, comments, docs and tool descriptions; Czech only for prompts (`src/prompts.ts`) and
-  `README.cs.md`.
+- English for code, comments, docs and tool descriptions; Czech only for `README.cs.md` and the Czech prompts.
+  Prompts (`src/prompts.ts`) come in Czech (the default) and English (`UOL_PROMPT_LANGUAGE=en`); change both
+  texts together.
 - Match the surrounding code: small functions, comments that explain *why*, no dead code.
 - Every tool declares `input` and `output` zod schemas and returns compact, normalised data: amounts as
   numbers, decoded statuses, resolved counterparty names, ISO dates. Lists page (`pageArg`, `limitArg`,
