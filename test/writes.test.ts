@@ -108,7 +108,44 @@ describe('create_sales_invoice', () => {
       { description: 'Licence', quantity: 1, unit_price_vat_inclusive: 1210, vat_calculation_method: 'from_above', product_id: 'licence' },
     ]);
     expect(data.payload).not.toHaveProperty('status');
+    expect(data.payload).not.toHaveProperty('public_id');
     expect(data.idempotency_key).toMatch(/^[0-9a-f-]{36}$/);
+  });
+
+  it('sends a given invoice number as public_id', async () => {
+    // arrange
+    const { call, writes } = await setup();
+
+    // act
+    const { data } = await call('create_sales_invoice', { buyer_id: 'alzacz_as', items, number: ' 2026000050 ', dry_run: true });
+
+    // assert
+    expect(writes()).toEqual([]);
+    expect(data.payload.public_id).toBe('2026000050');
+  });
+
+  it('refuses a number another invoice already has, before sending anything', async () => {
+    // arrange
+    const { call, writes } = await setup();
+
+    // act
+    const { result, text } = await call('create_sales_invoice', { buyer_id: 'alzacz_as', items, number: '2026000044', dry_run: true });
+
+    // assert
+    expect(result.isError).toBe(true);
+    expect(text).toMatch(/already used by invoice 2026000044/);
+    expect(writes()).toEqual([]);
+  });
+
+  it('rejects a blank number', async () => {
+    // arrange
+    const { call } = await setup();
+
+    // act
+    const { result } = await call('create_sales_invoice', { buyer_id: 'alzacz_as', items, number: '   ', dry_run: true });
+
+    // assert
+    expect(result.isError).toBe(true);
   });
 
   it('creates a draft, sends booleans as strings and writes the audit log', async () => {
@@ -215,6 +252,20 @@ describe('update_sales_invoice', () => {
       ],
     });
     expect(data.invoice.status).toBe('issued');
+  });
+
+  it('renumbers a draft through number and variable_symbol', async () => {
+    // arrange
+    const { call, writes } = await setup();
+
+    // act
+    const { data } = await call('update_sales_invoice', { invoice_id: DRAFT_INVOICE_ID, number: '2026000050', variable_symbol: 2026000050 });
+
+    // assert
+    const [patch] = writes();
+    expect(patch?.method).toBe('PATCH');
+    expect(patch?.body).toEqual({ public_id: '2026000050', variable_symbol: 2026000050 });
+    expect(data.invoice).toMatchObject({ invoice_id: DRAFT_INVOICE_ID, number: '2026000050' });
   });
 
   it('refuses an issued invoice before sending anything', async () => {

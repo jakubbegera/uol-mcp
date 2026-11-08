@@ -13,3 +13,5 @@ build/
 
 # Signing keys (e.g. the MCP Registry DNS key) stay local
 *.pem
+.idea/
+*.iml

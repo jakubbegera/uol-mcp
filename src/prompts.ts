@@ -178,7 +178,9 @@ function issueInvoice(zadani: string, target: InvoiceTarget): string {
     'dní. Je-li vystavení víc než 15 dní po DUZP, upozorni mě (plátce DPH má daňový doklad vystavit do 15 dnů). Další ' +
     'pole (type: proforma u zálohové faktury, currency, payment_method, bank_account_id, constant_symbol, ' +
     'specific_symbol, variable_symbol, text, note, contract_id) vyplň podle zadání nebo vzoru; ' +
-    'variable_symbol nech prázdný, pokud ho historie nemá jiný než číslo faktury.\n' +
+    'variable_symbol nech prázdný, pokud ho historie nemá jiný než číslo faktury. Má-li odběratel v historii vlastní ' +
+    'číselnou řadu (oddělený blok čísel), předej number jako další číslo v ní a variable_symbol se stejnou hodnotou; ' +
+    'jinak number vynech a číslo přidělí UOL.\n' +
     '5. Zavolej create_sales_invoice s dry_run: true. Nic se tím nezaloží, jen se ověří odběratel a ukáže payload.\n' +
     `6. Ukaž mi shrnutí: ${target.several ? 'účet, ' : ''}odběratel (název a IČO), řádky (text, množství, ` +
     'cena za jednotku s uvedením, zda je bez DPH, nebo s DPH, a sazba DPH), součet bez DPH, DPH a součet s DPH, ' +

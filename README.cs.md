@@ -35,7 +35,8 @@ popisuje [CHANGELOG.md](CHANGELOG.md).
 Připravené postupy (v klientech jako příkazy s lomítkem): `monthly_review` (měsíční přehled),
 `vat_check` (kontrola DPH), `overdue_followup` (návrhy upomínek, nic neodesílá), `process_inbox`
 (projde nahrané doklady) a s povoleným zápisem `issue_invoice` (sestaví fakturu z vašeho popisu,
-ukáže náhled a po potvrzení ji založí jako koncept). Seznam všech tools a volitelných sad je v
+ukáže náhled a po potvrzení ji založí jako koncept). Číslo faktury jde zadat ručně (`number`), takže
+odběratel může mít vlastní číselnou řadu a koncept jde přečíslovat; obsazené číslo nástroj odmítne. Seznam všech tools a volitelných sad je v
 [anglickém README](README.md#what-it-can-do).
 
 Skill [`uol-ucetnictvi`](skills/uol-ucetnictvi/SKILL.md) jde dál: fakturu vystaví tak, jak danému odběrateli

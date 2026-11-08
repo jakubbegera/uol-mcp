@@ -35,6 +35,7 @@ for it or falling back to defaults that don't match.
 | DUZP rule | Compare `tax_date` with `issue_date` and with the period billed. Typical: last day of the billed month (monthly services billed afterwards), or the delivery / issue day. A month-end DUZP stays on the last calendar day even when it is a weekend — DUZP is when the supply happened, not a working day. |
 | When it is issued | Days between DUZP and `issue_date` (e.g. the 15th of the next month). |
 | Invoices per period | One, or several (per project, per service). If several, which lines go on which invoice — ask which one the user means, or prepare all of them. |
+| Numbering | Compare `number` across customers. If this customer runs its own sequence (its own block of numbers, apart from the rest of the company's invoices), UOL's next number from the series would break it: pass `number` explicitly — the next one in that block — and `variable_symbol` with the same value. Otherwise leave `number` out and let UOL number it. |
 | Due period | `due_date` − `issue_date` in days. If it varies, take the most recent and show the variants. |
 | Lines | `product_id`, `description` (often one line per project or service), `quantity`, unit price and `price_includes_vat` (repeat the same convention: `unit_price` or `unit_price_with_vat`), `vat_rate`. The unit (hours, pieces) comes from the product — don't write it into the description. |
 | Recurring lines | Lines that appear every period with the same amount (a monthly fee, maintenance, a licence). |
@@ -79,8 +80,8 @@ for it or falling back to defaults that don't match.
 1. `create_sales_invoice` with `dry_run: true`. It validates the customer and returns the payload and an
    `idempotency_key`; it does not compute totals, so compute them from the lines yourself.
 2. Show the summary: company, customer (name, IČO), lines (text, quantity, unit price bez DPH, VAT
-   rate), total without VAT, VAT, total with VAT, issue date, DUZP, due date, bank account, draft or
-   issued. Mark which values came from the request and which from the pattern.
+   rate), total without VAT, VAT, total with VAT, issue date, DUZP, due date, invoice number (or "next from
+   UOL's series"), bank account, draft or issued. Mark which values came from the request and which from the pattern.
 3. Wait for an explicit yes. Then call `create_sales_invoice` with the same data, `dry_run: false` and
    the same `idempotency_key` (a retry then cannot create a second invoice), `issue: false`.
 4. Report `invoice_id`, number, status and UOL's totals (flag any difference from your summary), and
