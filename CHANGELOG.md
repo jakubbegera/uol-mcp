@@ -5,6 +5,15 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- `create_sales_invoice` and `update_sales_invoice` take an optional `number`, the invoice number printed on
+  the invoice (UOL `public_id`), so a customer can keep its own number sequence or a draft can be renumbered.
+  Without it UOL takes the next number from its series, as before. A number another invoice already has is
+  refused before anything is sent.
+- `uol-ucetnictvi` skill: reads the numbering pattern from history and passes `number` when a customer has
+  its own sequence.
+
 ## [0.6.1] — 2026-11-05
 
 ### Fixed

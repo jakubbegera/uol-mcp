@@ -185,8 +185,8 @@ With `UOL_ACCESS=write` these tools appear:
 | Tool | Does |
 |---|---|
 | `upload_document` | Uploads a PDF to UOL's document inbox for the accountant (only from `UOL_UPLOAD_DIRS`) |
-| `create_sales_invoice` | Creates an issued invoice for an existing contact — a draft unless `issue: true` |
-| `update_sales_invoice` | Changes or issues a draft invoice (UOL doesn't allow editing issued ones) |
+| `create_sales_invoice` | Creates an issued invoice for an existing contact — a draft unless `issue: true`; `number` sets the printed invoice number, otherwise UOL takes the next one from its number series |
+| `update_sales_invoice` | Changes or issues a draft invoice, its number included (UOL doesn't allow editing issued ones) |
 | `create_purchase_invoice` | Books a received invoice from an existing supplier |
 | `create_contact`, `update_contact` | Adds or changes a customer / supplier (refuses a duplicate IČO) |
 | `create_payment_demand` | Creates a payment demand (upomínka) for unpaid invoices of one customer — never sends it |

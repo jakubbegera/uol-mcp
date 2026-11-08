@@ -64,6 +64,16 @@ function itemPayload(item: ItemInput): Record<string, unknown> {
 }
 
 const invoiceHeader = {
+  number: z
+    .string()
+    .trim()
+    .min(1)
+    .max(30)
+    .optional()
+    .describe(
+      'Invoice number printed on the invoice (UOL public_id). Omit to take the next one from the number series; ' +
+        'set it to keep a separate sequence (e.g. per customer). Pass variable_symbol too when it should match.',
+    ),
   issue_date: isoDate.optional(),
   tax_date: isoDate.optional().describe('DUZP'),
   due_date: isoDate.optional(),
@@ -79,6 +89,8 @@ type HeaderInput = { [K in keyof typeof invoiceHeader]?: z.output<(typeof invoic
 
 function headerPayload(args: HeaderInput): Record<string, unknown> {
   return compact({
+    // UOL keeps its own invoice_id on the series counter; public_id is only the printed number (DESIGN §2 #36).
+    public_id: args.number,
     issue_date: args.issue_date,
     tax_payment_date: args.tax_date,
     due_date: args.due_date,
@@ -89,6 +101,17 @@ function headerPayload(args: HeaderInput): Record<string, unknown> {
     text: args.text,
     note: args.note,
   });
+}
+
+/** A printed number must stay unique; UOL's own invoice_id does not stop two invoices sharing a public_id. */
+async function assertNumberFree(session: UolSession, number: string | undefined, ownId?: string): Promise<void> {
+  if (number === undefined) return;
+  // The public_id filter matches partially, so compare exactly.
+  const taken = (await session.client.salesInvoices({ public_id: number, per_page: 100 })).items ?? [];
+  const other = taken.find((i) => str(i.public_id) === number && String(i.invoice_id ?? '') !== ownId);
+  if (other) {
+    throw new InputError(`Invoice number ${number} is already used by invoice ${String(other.invoice_id)}; pick another one.`);
+  }
 }
 
 const invoiceOutput = salesRow.extend({
@@ -212,6 +235,7 @@ export function registerWriteTools(server: McpServer, ctx: ToolContext): void {
         }
         throw error;
       });
+      await assertNumberFree(session, args.number);
       const idempotencyKey = args.idempotency_key ?? randomUUID();
       const payload = compact({
         buyer_id: args.buyer_id,
@@ -296,6 +320,7 @@ export function registerWriteTools(server: McpServer, ctx: ToolContext): void {
         );
       }
       if (current.status === 'invalid') throw new InputError('The invoice is cancelled (storno) and cannot be edited.');
+      await assertNumberFree(session, args.number, String(current.invoice_id ?? args.invoice_id));
 
       const items = [
         ...(args.add_items ?? []).map(itemPayload),
