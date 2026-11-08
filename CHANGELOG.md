@@ -5,6 +5,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.7.0] — 2026-11-08
+
 ### Added
 
 - English prompts: with `UOL_PROMPT_LANGUAGE=en` (the Claude Desktop extension's "Prompt language") the
@@ -166,7 +168,8 @@ First public release (0.1–0.3 were internal milestones).
 - Distribution: npm, GHCR image (amd64 / arm64), Claude Desktop extension (`.mcpb`), MCP Registry
   (`eu.humblecode/uol`).
 
-[Unreleased]: https://github.com/jakubbegera/uol-mcp/compare/v0.6.2...HEAD
+[Unreleased]: https://github.com/jakubbegera/uol-mcp/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/jakubbegera/uol-mcp/compare/v0.6.2...v0.7.0
 [0.6.2]: https://github.com/jakubbegera/uol-mcp/compare/v0.6.1...v0.6.2
 [0.6.1]: https://github.com/jakubbegera/uol-mcp/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/jakubbegera/uol-mcp/compare/v0.5.0...v0.6.0
